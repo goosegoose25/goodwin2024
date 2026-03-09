@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2024 Goodwin Champions — Collection Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#080d16;color:#e2e8f0;font-family:'Inter',-apple-system,sans-serif;min-height:100vh;}
+  button{border:none;cursor:pointer;background:transparent;font-family:inherit;}
+  input{font-family:inherit;}
+  ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:#0f172a;} ::-webkit-scrollbar-thumb{background:#334155;border-radius:2px;}
+
+  #header{background:linear-gradient(135deg,#7f1d1d 0%,#450a0a 100%);border-bottom:1px solid rgba(255,255,255,0.07);padding:18px 18px 0;}
+  #header-inner{max-width:680px;margin:0 auto;}
+  .title-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+  .eyebrow{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:3px;}
+  h1{font-size:20px;font-weight:800;color:#f1f5f9;letter-spacing:-0.5px;}
+  .subtitle{font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;}
+  .save-indicator{text-align:right;padding-top:4px;}
+  .backup-row{display:flex;gap:6px;margin-top:7px;justify-content:flex-end;}
+  .backup-btn{font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;cursor:pointer;border:none;transition:opacity 0.15s;}
+  .backup-btn:active{opacity:0.7;}
+  .btn-export{background:#1e3a5f;color:#93c5fd;}
+  .btn-import{background:#1c1917;color:#a8a29e;}
+  .import-ok{font-size:10px;color:#4ade80;margin-top:4px;text-align:right;display:none;}
+  .saved-badge{font-size:11px;color:#166534;background:#052e16;padding:2px 8px;border-radius:4px;}
+  .saving-badge{font-size:11px;color:#f97316;}
+  .doubles-badge{margin-top:5px;font-size:11px;color:#f97316;}
+
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .stat-card{background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);}
+  .stat-label{font-size:10px;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  .stat-val{font-size:18px;font-weight:800;color:#f1f5f9;font-family:monospace;}
+  .stat-bar-track{margin-top:5px;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);}
+  .stat-bar-fill{height:100%;border-radius:2px;background:#f97316;transition:width 0.4s;}
+
+  .tabs{display:flex;}
+  .tab-btn{flex:1;padding:10px 6px;border-bottom:2px solid transparent;color:rgba(255,255,255,0.55);font-size:11px;font-weight:400;transition:all 0.15s;text-align:center;border-left:none;border-right:none;border-top:none;}
+  .tab-btn.active{border-bottom:2px solid #f97316;color:#f1f5f9;font-weight:700;}
+  .tab-sub{font-size:10px;margin-top:1px;color:rgba(255,255,255,0.4);}
+  .tab-btn.active .tab-sub{color:#f97316;}
+
+  #content{max-width:680px;margin:0 auto;padding:14px 16px 80px;}
+  .search-input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#e2e8f0;font-size:13px;outline:none;margin-bottom:10px;}
+  .section-hint{font-size:11px;color:#334155;margin-bottom:8px;padding-left:2px;}
+
+  .card-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,0.02);border:1px solid transparent;transition:all 0.15s;}
+  .card-row.has{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);}
+  .card-num{width:30px;height:30px;border-radius:6px;flex-shrink:0;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#475569;font-family:monospace;transition:all 0.15s;}
+  .card-row.has .card-num{color:#000;}
+  .card-info{flex:1;min-width:0;}
+  .card-name{font-size:13px;font-weight:400;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all 0.15s;}
+  .card-row.has .card-name{font-weight:600;color:#f1f5f9;}
+  .card-cat{font-size:10px;color:#334155;margin-top:1px;transition:all 0.15s;}
+  .horiz-tag{margin-left:5px;font-size:10px;color:#475569;background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;}
+
+  .counter{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+  .counter-btn{width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:15px;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s;}
+  .counter-btn.zero{opacity:0.3;}
+  .counter-val{width:26px;text-align:center;font-size:14px;font-weight:700;font-family:monospace;color:#334155;}
+  .counter-val.one{color:#f1f5f9;}
+  .counter-val.many{color:#f97316;}
+
+  /* Rare tab */
+  .rare-group{margin-bottom:10px;}
+  .rare-group-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:9px;color:#e2e8f0;text-align:left;}
+  .rare-group-label{font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;}
+  .gc-dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0;}
+  .group-collected{font-size:11px;color:#64748b;font-weight:400;}
+  .rare-group-arrow{color:#475569;font-size:12px;}
+  .rare-items{padding-left:8px;margin-top:3px;}
+  .rare-item{margin-bottom:4px;}
+  .rare-item-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:7px;background:rgba(255,255,255,0.02);color:#e2e8f0;text-align:left;}
+  .rare-item-label{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;min-width:0;flex:1;}
+  .item-dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0;}
+  .item-note{font-size:10px;color:#475569;font-weight:400;white-space:nowrap;}
+  .item-count{font-size:10px;font-weight:700;margin-left:2px;}
+  .rare-item-arrow{color:#475569;font-size:11px;flex-shrink:0;}
+  .rare-item-content{padding-left:6px;margin-top:2px;}
+
+  /* Free text */
+  .free-text-note{font-size:11px;color:#475569;margin-bottom:8px;font-style:italic;padding-left:2px;}
+  .free-entry{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,0.05);}
+  .free-entry-name{flex:1;font-size:13px;font-weight:600;color:#f1f5f9;}
+  .free-remove{color:#475569;font-size:16px;padding:0 2px;}
+  .free-add-row{display:flex;gap:6px;margin-top:8px;}
+  .free-input{flex:1;padding:7px 10px;border-radius:7px;background:rgba(255,255,255,0.04);color:#e2e8f0;font-size:12px;outline:none;}
+  .free-add-btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;}
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-inner">
+    <div class="title-row">
+      <div>
+        <div class="eyebrow">Upper Deck</div>
+        <h1>2024 Goodwin Champions</h1>
+        <div class="subtitle">Team Collection · Kairav, Gia &amp; Rajen</div>
+      </div>
+      <div class="save-indicator">
+        <div id="save-status" class="saved-badge">Saved ✓</div>
+        <div id="doubles-display" class="doubles-badge" style="display:none"></div>
+        <div id="total-display" class="doubles-badge">0 cards</div>
+        <div class="backup-row">
+          <button class="backup-btn btn-export" onclick="exportData()">⬇ Export</button>
+          <button class="backup-btn btn-import" onclick="document.getElementById('import-file').click()">⬆ Import</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+        <div class="import-ok" id="import-ok">✓ Data loaded!</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Base Set</div>
+        <div class="stat-val" id="base-stat">0 / 100</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" id="base-bar" style="width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Splash of Color</div>
+        <div class="stat-val" id="splash-stat">0 / 50</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" id="splash-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="base">
+        Base Set<div class="tab-sub" id="tab-base-sub">0 / 100</div>
+      </button>
+      <button class="tab-btn" data-tab="splash">
+        Splash of Color<div class="tab-sub" id="tab-splash-sub">0 / 50</div>
+      </button>
+      <button class="tab-btn" data-tab="rare">
+        Rare &amp; Special<div class="tab-sub">Parallels · Autos · Inserts</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="content">
+  <div id="panel-base" class="tab-panel active">
+    <input class="search-input" id="base-search" placeholder="Search name, sport, or card #…" oninput="filterBase(this.value)">
+    <div class="section-hint">Cards 1–90 · Horizontals 91–100</div>
+    <div id="base-list"></div>
+  </div>
+
+  <div id="panel-splash" class="tab-panel">
+    <input class="search-input" id="splash-search" placeholder="Search name, sport, or card #…" oninput="filterSplash(this.value)">
+    <div class="section-hint">Cards 101–150 · ~1:2 packs</div>
+    <div id="splash-list"></div>
+  </div>
+
+  <div id="panel-rare" class="tab-panel">
+    <div class="search-row">
+      <input class="search-input" id="rare-search" placeholder="Search rare &amp; special cards…" oninput="filterRare(this.value)">
+    </div>
+    <div id="rare-list"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+
+const BASE_SET = [
+  {n:1,name:"Michael Jordan",cat:"Basketball"},{n:2,name:"Tiger Woods",cat:"Golf"},{n:3,name:"De'Aaron Fox",cat:"Basketball"},{n:4,name:"C.J. Stroud",cat:"Football"},{n:5,name:"Bryce Young",cat:"Football"},
+  {n:6,name:"Darius Garland",cat:"Basketball"},{n:7,name:"Trinity Rodman",cat:"Soccer-W"},{n:8,name:"D.J. Wagner",cat:"Basketball"},{n:9,name:"Justin Edwards",cat:"Basketball"},{n:10,name:"Max Homa",cat:"Golf"},
+  {n:11,name:"Erriyon Knighton",cat:"Track"},{n:12,name:"Alyssa Thompson",cat:"Soccer-W"},{n:13,name:"Gisele Thompson",cat:"Soccer-W"},{n:14,name:"Rose Zhang",cat:"Golf-W"},{n:15,name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:16,name:"Mateo Fernandez de Oliveira",cat:"Golf"},{n:17,name:"Tommy White",cat:"Baseball"},{n:18,name:"Audric Estime",cat:"Football"},{n:19,name:"Malachi Nelson",cat:"Football"},{n:20,name:"Nicholaus Iamaleava",cat:"Football"},
+  {n:21,name:"Jaden Rashada",cat:"Football"},{n:22,name:"Aden Holloway",cat:"Basketball"},{n:23,name:"Ian Jackson",cat:"Basketball"},{n:24,name:"Leodalis De Vries",cat:"Baseball"},{n:25,name:"Troy Franklin",cat:"Football"},
+  {n:26,name:"Gordon Sargent",cat:"Golf"},{n:27,name:"Maya Brady",cat:"Softball"},{n:28,name:"Evan Stewart",cat:"Football"},{n:29,name:"Ethan Holliday",cat:"Baseball"},{n:30,name:"Andrew Putnam",cat:"Golf"},
+  {n:31,name:"Malik Nabers",cat:"Football"},{n:32,name:"Carter Graham",cat:"Baseball"},{n:33,name:"Isiah Harwell",cat:"Basketball"},{n:34,name:"Anna Leigh Waters",cat:"Pickleball"},{n:35,name:"Bobby Finke",cat:"Swimming"},
+  {n:36,name:"Jordan Burroughs",cat:"Wrestling"},{n:37,name:"Casey Phair",cat:"Soccer-W"},{n:38,name:"Tommy Troy",cat:"Baseball"},{n:39,name:"Nick Kurtz",cat:"Baseball"},{n:40,name:"Caroline Marks",cat:"Surfing"},
+  {n:41,name:"Dillon Gabriel",cat:"Football"},{n:42,name:"Dorian Singer",cat:"Football"},{n:43,name:"Ethan Petry",cat:"Baseball"},{n:44,name:"Matt Shaw",cat:"Baseball"},{n:45,name:"Konnor McClain",cat:"Gymnastics"},
+  {n:46,name:"Korbin Albert",cat:"Soccer-W"},{n:47,name:"Bo Nickal",cat:"MMA"},{n:48,name:"Brayden Taylor",cat:"Baseball"},{n:49,name:"U-God",cat:"Rapper"},{n:50,name:"Brandon Garrison",cat:"Basketball"},
+  {n:51,name:"Adrien Dumont de Chassart",cat:"Golf"},{n:52,name:"Miguel Bleis",cat:"Baseball"},{n:53,name:"Deyna Castellanos",cat:"Soccer-W"},{n:54,name:"Derek Curiel",cat:"Baseball"},{n:55,name:"Mookie Cook",cat:"Basketball"},
+  {n:56,name:"Vance Honeycutt",cat:"Baseball"},{n:57,name:"Jackson Shelstad",cat:"Basketball"},{n:58,name:"Daniela Moroz",cat:"Kiteboarding"},{n:59,name:"Sam Hurley",cat:"Track"},{n:60,name:"Alex Mooney",cat:"Baseball"},
+  {n:61,name:"MacKenzie Porter",cat:"Musician"},{n:62,name:"Logan Diggs",cat:"Football"},{n:63,name:"Trevor Etienne",cat:"Football"},{n:64,name:"Camilo Diaz",cat:"Baseball"},{n:65,name:"Jamari Thrash",cat:"Football"},
+  {n:66,name:"Kevin McGonigle",cat:"Baseball"},{n:67,name:"Anthony Gutierrez",cat:"Baseball"},{n:68,name:"Ali Jennings III",cat:"Football"},{n:69,name:"Jurrion Dickey",cat:"Football"},{n:70,name:"Keiner Delgado",cat:"Baseball"},
+  {n:71,name:"Manuel Beltre",cat:"Baseball"},{n:72,name:"Lydia Warren",cat:"MMA-W"},{n:73,name:"Michael Obafemi",cat:"Soccer"},{n:74,name:"Sebastian Rivera",cat:"Wrestling"},{n:75,name:"Fidel Barajas",cat:"Soccer"},
+  {n:76,name:"Melina Rebimbas",cat:"Soccer-W"},{n:77,name:"Jarin Stevenson",cat:"Basketball"},{n:78,name:"Quincy Isaiah",cat:"Actor"},{n:79,name:"Sean Patrick Small",cat:"Actor"},{n:80,name:"John Bol",cat:"Basketball"},
+  {n:81,name:"Damien Martinez",cat:"Football"},{n:82,name:"Kyllian Michee",cat:"Basketball"},{n:83,name:"Jackson Olson",cat:"Media"},{n:84,name:"Arda Ocal",cat:"Media"},{n:85,name:"Chris Parnell",cat:"Actor"},
+  {n:86,name:"Francis Marshall",cat:"MMA"},{n:87,name:"Austin Greaser",cat:"Golf"},{n:88,name:"Frank Gore Jr.",cat:"Football"},{n:89,name:"Norma Palafox",cat:"Soccer-W"},{n:90,name:"Chloe Ricketts",cat:"Soccer-W"},
+  {n:91,name:"Michael Jordan",cat:"Basketball",tag:"H"},{n:92,name:"Tiger Woods",cat:"Golf",tag:"H"},{n:93,name:"De'Aaron Fox",cat:"Basketball",tag:"H"},{n:94,name:"C.J. Stroud",cat:"Football",tag:"H"},{n:95,name:"Bryce Young",cat:"Football",tag:"H"},
+  {n:96,name:"Darius Garland",cat:"Basketball",tag:"H"},{n:97,name:"Trinity Rodman",cat:"Soccer-W",tag:"H"},{n:98,name:"D.J. Wagner",cat:"Basketball",tag:"H"},{n:99,name:"Justin Edwards",cat:"Basketball",tag:"H"},{n:100,name:"Max Homa",cat:"Golf",tag:"H"},
+];
+
+const SPLASH_SET = [
+  {n:101,name:"Michael Jordan",cat:"Basketball"},{n:102,name:"De'Aaron Fox",cat:"Basketball"},{n:103,name:"Bryce Young",cat:"Football"},{n:104,name:"Darius Garland",cat:"Basketball"},{n:105,name:"D.J. Wagner",cat:"Basketball"},
+  {n:106,name:"Vance Honeycutt",cat:"Baseball"},{n:107,name:"Erriyon Knighton",cat:"Track"},{n:108,name:"Gisele Thompson",cat:"Soccer-W"},{n:109,name:"Miles Chamley-Watson",cat:"Fencing"},{n:110,name:"Adrien Dumont de Chassart",cat:"Golf"},
+  {n:111,name:"Daniela Moroz",cat:"Kiteboarding"},{n:112,name:"Nicholaus Iamaleava",cat:"Football"},{n:113,name:"Jaden Rashada",cat:"Football"},{n:114,name:"Ian Jackson",cat:"Basketball"},{n:115,name:"Troy Franklin",cat:"Football"},
+  {n:116,name:"Gordon Sargent",cat:"Golf"},{n:117,name:"Evan Stewart",cat:"Football"},{n:118,name:"Max Homa",cat:"Golf"},{n:119,name:"Malik Nabers",cat:"Football"},{n:120,name:"Isiah Harwell",cat:"Basketball"},
+  {n:121,name:"Bobby Finke",cat:"Swimming"},{n:122,name:"Jordan Burroughs",cat:"Wrestling"},{n:123,name:"Tommy Troy",cat:"Baseball"},{n:124,name:"Caroline Marks",cat:"Surfing"},{n:125,name:"Dillon Gabriel",cat:"Football"},
+  {n:126,name:"Ethan Petry",cat:"Baseball"},{n:127,name:"Konnor McClain",cat:"Gymnastics"},{n:128,name:"Korbin Albert",cat:"Soccer-W"},{n:129,name:"Brayden Taylor",cat:"Baseball"},{n:130,name:"Sebastian Rivera",cat:"Wrestling"},
+  {n:131,name:"Tiger Woods",cat:"Golf"},{n:132,name:"C.J. Stroud",cat:"Football"},{n:133,name:"Trinity Rodman",cat:"Soccer-W"},{n:134,name:"Justin Edwards",cat:"Basketball"},{n:135,name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:136,name:"Rose Zhang",cat:"Golf-W"},{n:137,name:"Tommy White",cat:"Baseball"},{n:138,name:"Malachi Nelson",cat:"Football"},{n:139,name:"Aden Holloway",cat:"Basketball"},{n:140,name:"Leodalis De Vries",cat:"Baseball"},
+  {n:141,name:"Maya Brady",cat:"Softball"},{n:142,name:"Ethan Holliday",cat:"Baseball"},{n:143,name:"Audric Estime",cat:"Football"},{n:144,name:"Anna Leigh Waters",cat:"Pickleball"},{n:145,name:"Casey Phair",cat:"Soccer-W"},
+  {n:146,name:"Nick Kurtz",cat:"Baseball"},{n:147,name:"Dorian Singer",cat:"Football"},{n:148,name:"Bo Nickal",cat:"MMA"},{n:149,name:"U-God",cat:"Rapper"},{n:150,name:"Derek Curiel",cat:"Baseball"},
+];
+
+const BASE90 = BASE_SET.filter(c => c.n <= 90);
+const ALL150 = [...BASE_SET, ...SPLASH_SET];
+
+// Named pools for rare/special categories
+const POOL_AUTO_STD = [
+  {n:"A-AD",name:"Adrien Dumont de Chassart",cat:"Golf"},{n:"A-AG",name:"Anthony Gutierrez",cat:"Baseball"},
+  {n:"A-AJ",name:"Ali Jennings III",cat:"Football"},{n:"A-AM",name:"Alex Mooney",cat:"Baseball"},
+  {n:"A-AO",name:"Arda Ocal",cat:"Media"},{n:"A-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"A-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"A-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"A-BG",name:"Brandon Garrison",cat:"Basketball"},{n:"A-BJ",name:"John Bol",cat:"Basketball"},
+  {n:"A-BL",name:"Miguel Bleis",cat:"Baseball"},{n:"A-BR",name:"Maya Brady",cat:"Softball"},
+  {n:"A-BT",name:"Brayden Taylor",cat:"Baseball"},{n:"A-CG",name:"Carter Graham",cat:"Baseball"},
+  {n:"A-CP",name:"Chris Parnell",cat:"Actor"},{n:"A-CU",name:"Derek Curiel",cat:"Baseball"},
+  {n:"A-DC",name:"Deyna Castellanos",cat:"Soccer-W"},{n:"A-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"A-DM",name:"Daniela Moroz",cat:"Kiteboarding"},{n:"A-DP",name:"Dink Pate",cat:"Basketball"},
+  {n:"A-EH",name:"Ethan Holliday",cat:"Baseball"},{n:"A-EP",name:"Ethan Petry",cat:"Baseball"},
+  {n:"A-FM",name:"Francis Marshall",cat:"MMA"},{n:"A-GN",name:"Greg Norman",cat:"Golf"},
+  {n:"A-GS",name:"Gordon Sargent",cat:"Golf"},{n:"A-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"A-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"A-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"A-JB",name:"Jordan Burroughs",cat:"Wrestling"},{n:"A-JD",name:"Jurrion Dickey",cat:"Football"},
+  {n:"A-JE",name:"Justin Edwards",cat:"Basketball"},{n:"A-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"A-JS",name:"Jackson Shelstad",cat:"Basketball"},{n:"A-KM",name:"Konnor McClain",cat:"Gymnastics"},
+  {n:"A-LD",name:"Logan Diggs",cat:"Football"},{n:"A-LV",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"A-LW",name:"Lydia Warren",cat:"MMA-W"},{n:"A-MB",name:"Manuel Beltre",cat:"Baseball"},
+  {n:"A-MC",name:"Mookie Cook",cat:"Basketball"},{n:"A-MF",name:"Mateo Fernandez de Oliveira",cat:"Golf"},
+  {n:"A-MG",name:"Kevin McGonigle",cat:"Baseball"},{n:"A-MI",name:"Kyllian Michee",cat:"Basketball"},
+  {n:"A-MP",name:"MacKenzie Porter",cat:"Musician"},{n:"A-MR",name:"Melina Rebimbas",cat:"Soccer-W"},
+  {n:"A-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"A-NK",name:"Nick Kurtz",cat:"Baseball"},
+  {n:"A-PC",name:"Casey Phair",cat:"Soccer-W"},{n:"A-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"A-SH",name:"Sam Hurley",cat:"Track"},{n:"A-SP",name:"Sean Patrick Small",cat:"Actor"},
+  {n:"A-SR",name:"Sebastian Rivera",cat:"Wrestling"},{n:"A-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"A-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"A-TT",name:"Tommy Troy",cat:"Baseball"},
+  {n:"A-TW",name:"Tommy White",cat:"Baseball"},{n:"A-UG",name:"U-God",cat:"Rapper"},
+  {n:"A-VH",name:"Vance Honeycutt",cat:"Baseball"},
+];
+
+const POOL_AUTO_HORIZ = [
+  {n:"HA-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"HA-BT",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"HA-CM",name:"Caroline Marks",cat:"Surfing"},{n:"HA-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"HA-DG",name:"Dillon Gabriel",cat:"Football"},{n:"HA-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"HA-EP",name:"Ethan Petry",cat:"Baseball"},{n:"HA-ES",name:"Evan Stewart",cat:"Football"},
+  {n:"HA-GN",name:"Greg Norman",cat:"Golf"},{n:"HA-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"HA-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"HA-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"HA-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"HA-JB",name:"Jordan Burroughs",cat:"Wrestling"},
+  {n:"HA-JR",name:"Jaden Rashada",cat:"Football"},{n:"HA-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"HA-MB",name:"Maya Brady",cat:"Softball"},{n:"HA-NK",name:"Nick Kurtz",cat:"Baseball"},
+  {n:"HA-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"HA-TT",name:"Tommy Troy",cat:"Baseball"},
+];
+
+const POOL_GOUDEY_AUTO = [
+  {n:"GA-AG",name:"Anthony Gutierrez",cat:"Baseball"},{n:"GA-AJ",name:"Ali Jennings III",cat:"Football"},
+  {n:"GA-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"GA-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"GA-BE",name:"Manuel Beltre",cat:"Baseball"},{n:"GA-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"GA-BG",name:"Brandon Garrison",cat:"Basketball"},{n:"GA-BR",name:"Maya Brady",cat:"Softball"},
+  {n:"GA-BT",name:"Brayden Taylor",cat:"Baseball"},{n:"GA-CG",name:"Carter Graham",cat:"Baseball"},
+  {n:"GA-CP",name:"Chris Parnell",cat:"Actor"},{n:"GA-CU",name:"Derek Curiel",cat:"Baseball"},
+  {n:"GA-DC",name:"Deyna Castellanos",cat:"Soccer-W"},{n:"GA-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"GA-DM",name:"Daniela Moroz",cat:"Kiteboarding"},{n:"GA-DP",name:"Dink Pate",cat:"Basketball"},
+  {n:"GA-DS",name:"Dorian Singer",cat:"Football"},{n:"GA-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"GA-GN",name:"Greg Norman",cat:"Golf"},{n:"GA-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"GA-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"GA-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"GA-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"GA-JB",name:"Jordan Burroughs",cat:"Wrestling"},
+  {n:"GA-JD",name:"Jurrion Dickey",cat:"Football"},{n:"GA-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"GA-JR",name:"Jaden Rashada",cat:"Football"},{n:"GA-JS",name:"Jackson Shelstad",cat:"Basketball"},
+  {n:"GA-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"GA-LD",name:"Logan Diggs",cat:"Football"},
+  {n:"GA-LV",name:"Leodalis De Vries",cat:"Baseball"},{n:"GA-MB",name:"Miguel Bleis",cat:"Baseball"},
+  {n:"GA-MC",name:"Mookie Cook",cat:"Basketball"},{n:"GA-MR",name:"Melina Rebimbas",cat:"Soccer-W"},
+  {n:"GA-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"GA-NK",name:"Nick Kurtz",cat:"Baseball"},
+  {n:"GA-SH",name:"Sam Hurley",cat:"Track"},{n:"GA-SR",name:"Sebastian Rivera",cat:"Wrestling"},
+  {n:"GA-TF",name:"Troy Franklin",cat:"Football"},{n:"GA-TW",name:"Tommy White",cat:"Baseball"},
+  {n:"GA-WO",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_SPLASH_AUTO = [
+  {n:"SA-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"SA-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"SA-BF",name:"Bobby Finke",cat:"Swimming"},{n:"SA-CP",name:"Casey Phair",cat:"Soccer-W"},
+  {n:"SA-DC",name:"Derek Curiel",cat:"Baseball"},{n:"SA-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"SA-DM",name:"Daniela Moroz",cat:"Kiteboarding"},{n:"SA-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"SA-EK",name:"Erriyon Knighton",cat:"Track"},{n:"SA-EV",name:"Evan Stewart",cat:"Football"},
+  {n:"SA-FM",name:"Francis Marshall",cat:"MMA"},{n:"SA-GA",name:"Dillon Gabriel",cat:"Football"},
+  {n:"SA-GN",name:"Greg Norman",cat:"Golf"},{n:"SA-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"SA-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"SA-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"SA-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"SA-JB",name:"Jordan Burroughs",cat:"Wrestling"},
+  {n:"SA-JR",name:"Jaden Rashada",cat:"Football"},{n:"SA-KM",name:"Konnor McClain",cat:"Gymnastics"},
+  {n:"SA-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"SA-MB",name:"Maya Brady",cat:"Softball"},
+  {n:"SA-MC",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"SA-MP",name:"MacKenzie Porter",cat:"Musician"},
+  {n:"SA-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"SA-SH",name:"Sam Hurley",cat:"Track"},
+  {n:"SA-SR",name:"Sebastian Rivera",cat:"Wrestling"},{n:"SA-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"SA-VH",name:"Vance Honeycutt",cat:"Baseball"},{n:"SA-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_EXQ_BASE = [
+  {n:"V-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"V-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"V-DG",name:"Darius Garland",cat:"Basketball"},{n:"V-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"V-IS",name:"Iga Swiatek",cat:"Tennis"},{n:"V-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"V-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"V-SM",name:"Sydney McLaughlin-Levrone",cat:"Track"},
+  {n:"V-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"V-TW",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_EXQ_ROOKIE = [
+  {n:"R-AH",name:"Aden Holloway",cat:"Basketball"},{n:"R-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"R-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"R-BT",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"R-CM",name:"Caroline Marks",cat:"Surfing"},{n:"R-DG",name:"Dillon Gabriel",cat:"Football"},
+  {n:"R-EK",name:"Erriyon Knighton",cat:"Track"},{n:"R-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"R-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"R-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"R-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"R-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"R-JR",name:"Jaden Rashada",cat:"Football"},{n:"R-JT",name:"Jamari Thrash",cat:"Football"},
+  {n:"R-KM",name:"Kevin McGonigle",cat:"Baseball"},{n:"R-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"R-MC",name:"Mookie Cook",cat:"Basketball"},{n:"R-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"R-MS",name:"Matt Shaw",cat:"Baseball"},{n:"R-MW",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"R-NE",name:"Malachi Nelson",cat:"Football"},{n:"R-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"R-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"R-TW",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_EXQ_ROOKIE_AUTO = [
+  {n:"RA-AL",name:"Alex Mooney",cat:"Baseball"},{n:"RA-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"RA-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"RA-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"RA-CM",name:"Caroline Marks",cat:"Surfing"},{n:"RA-CO",name:"Mookie Cook",cat:"Basketball"},
+  {n:"RA-DG",name:"Dillon Gabriel",cat:"Football"},{n:"RA-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"RA-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"RA-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"RA-JD",name:"Jurrion Dickey",cat:"Football"},{n:"RA-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"RA-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"RA-KM2",name:"Kevin McGonigle",cat:"Baseball"},
+  {n:"RA-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"RA-MB",name:"Maya Brady",cat:"Softball"},
+  {n:"RA-MN",name:"Malachi Nelson",cat:"Football"},{n:"RA-MS",name:"Matt Shaw",cat:"Baseball"},
+  {n:"RA-SH",name:"Sam Hurley",cat:"Track"},{n:"RA-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"RA-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"RA-TT",name:"Tommy Troy",cat:"Baseball"},
+  {n:"RA-TW",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_EXQ_AUTO_PATCH = [
+  {n:"RAP-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"RAP-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"RAP-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"RAP-LD",name:"Leodalis De Vries",cat:"Baseball"},
+];
+
+const POOL_EXQ_KICKS = [
+  {n:"ESK-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"ESK-MJ",name:"Michael Jordan",cat:"Basketball"},
+];
+
+const POOL_BD_BASE = [
+  {n:"BD-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"BD-DG",name:"Darius Garland",cat:"Basketball"},
+  {n:"BD-DW",name:"D.J. Wagner",cat:"Basketball"},{n:"BD-MJ",name:"Michael Jordan",cat:"Basketball"},
+  {n:"BD-TW",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_BD_ROOKIE = [
+  {n:"BDRG-AH",name:"Aden Holloway",cat:"Basketball"},{n:"BDRG-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"BDRG-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"BDRG-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"BDRG-CM",name:"Caroline Marks",cat:"Surfing"},{n:"BDRG-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"BDRG-EK",name:"Erriyon Knighton",cat:"Track"},{n:"BDRG-GA",name:"Dillon Gabriel",cat:"Football"},
+  {n:"BDRG-GS",name:"Gordon Sargent",cat:"Golf"},{n:"BDRG-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"BDRG-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"BDRG-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"BDRG-JE",name:"Justin Edwards",cat:"Basketball"},{n:"BDRG-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"BDRG-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"BDRG-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"BDRG-MB",name:"Maya Brady",cat:"Softball"},{n:"BDRG-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"BDRG-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"BDRG-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"BDRG-SH",name:"Sam Hurley",cat:"Track"},{n:"BDRG-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"BDRG-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"BDRG-TW",name:"Tommy White",cat:"Baseball"},
+  {n:"BDRG-VH",name:"Vance Honeycutt",cat:"Baseball"},
+];
+
+const POOL_BD_BAND = [
+  {n:"BAND-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"BAND-DW",name:"D.J. Wagner",cat:"Basketball"},
+  {n:"BAND-IS",name:"Iga Swiatek",cat:"Tennis"},{n:"BAND-MJ",name:"Michael Jordan",cat:"Basketball"},
+  {n:"BAND-NI",name:"Nicholaus Iamaleava",cat:"Football"},{n:"BAND-SM",name:"Sydney McLaughlin-Levrone",cat:"Track"},
+  {n:"BAND-TW",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_BD_BAND_ROOKIES = [
+  {n:"BAND-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"BAND-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"BAND-BN",name:"Bo Nickal",cat:"MMA"},{n:"BAND-CM",name:"Caroline Marks",cat:"Surfing"},
+  {n:"BAND-EH",name:"Ethan Holliday",cat:"Baseball"},{n:"BAND-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"BAND-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"BAND-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"BAND-LV",name:"Leodalis De Vries",cat:"Baseball"},{n:"BAND-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"BAND-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"BAND-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"BAND-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_BD_GEMOGRAPHY = [
+  {n:"BDG-CS",name:"C.J. Stroud",cat:"Football"},{n:"BDG-DAF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"BDG-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+];
+
+
+const POOL_YOUNG_GUNS = [
+  {n:"YG-1",name:"Dillon Gabriel",cat:"Football"},{n:"YG-2",name:"Aden Holloway",cat:"Basketball"},
+  {n:"YG-3",name:"Vance Honeycutt",cat:"Baseball"},{n:"YG-4",name:"Adrien Dumont de Chassart",cat:"Golf"},
+  {n:"YG-5",name:"Troy Franklin",cat:"Football"},{n:"YG-6",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"YG-7",name:"Trinity Rodman",cat:"Soccer-W"},{n:"YG-8",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"YG-9",name:"Tommy White",cat:"Baseball"},{n:"YG-10",name:"Bo Nickal",cat:"MMA"},
+  {n:"YG-11",name:"Tommy Troy",cat:"Baseball"},{n:"YG-12",name:"Bobby Finke",cat:"Swimming"},
+  {n:"YG-13",name:"Fidel Barajas",cat:"Soccer"},{n:"YG-14",name:"Brandon Garrison",cat:"Basketball"},
+  {n:"YG-15",name:"Sebastian Rivera",cat:"Wrestling"},{n:"YG-16",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"YG-17",name:"Sam Hurley",cat:"Track"},{n:"YG-18",name:"Casey Phair",cat:"Soccer-W"},
+  {n:"YG-19",name:"Rose Zhang",cat:"Golf-W"},{n:"YG-20",name:"Daniela Moroz",cat:"Kiteboarding"},
+  {n:"YG-21",name:"Nick Kurtz",cat:"Baseball"},{n:"YG-22",name:"Derek Curiel",cat:"Baseball"},
+  {n:"YG-23",name:"Mookie Cook",cat:"Basketball"},{n:"YG-24",name:"Deyna Castellanos",cat:"Soccer-W"},
+  {n:"YG-25",name:"Miguel Bleis",cat:"Baseball"},{n:"YG-26",name:"Frank Gore Jr.",cat:"Football"},
+  {n:"YG-27",name:"Maya Brady",cat:"Softball"},{n:"YG-28",name:"Lydia Warren",cat:"MMA-W"},
+  {n:"YG-29",name:"Matt Shaw",cat:"Baseball"},{n:"YG-30",name:"Dorian Singer",cat:"Football"},
+  {n:"YG-31",name:"Malik Nabers",cat:"Football"},{n:"YG-32",name:"Erriyon Knighton",cat:"Track"},
+  {n:"YG-33",name:"Malachi Nelson",cat:"Football"},{n:"YG-34",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"YG-35",name:"Leodalis De Vries",cat:"Baseball"},{n:"YG-36",name:"Ethan Petry",cat:"Baseball"},
+  {n:"YG-37",name:"Kyllian Michee",cat:"Basketball"},{n:"YG-38",name:"Michael Obafemi",cat:"Soccer"},
+  {n:"YG-39",name:"Korbin Albert",cat:"Soccer-W"},{n:"YG-40",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"YG-41",name:"Konnor McClain",cat:"Gymnastics"},{n:"YG-42",name:"Gordon Sargent",cat:"Golf"},
+  {n:"YG-43",name:"Jurrion Dickey",cat:"Football"},{n:"YG-44",name:"Ian Jackson",cat:"Basketball"},
+  {n:"YG-45",name:"Justin Edwards",cat:"Basketball"},{n:"YG-46",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"YG-47",name:"Evan Stewart",cat:"Football"},{n:"YG-48",name:"Jackson Shelstad",cat:"Basketball"},
+  {n:"YG-49",name:"Caroline Marks",cat:"Surfing"},{n:"YG-50",name:"Jaden Rashada",cat:"Football"},
+];
+
+const POOL_ALL_WORLD = [
+  {n:"AW-1",name:"Deyna Castellanos",cat:"Soccer-W"},{n:"AW-2",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"AW-3",name:"Casey Phair",cat:"Soccer-W"},{n:"AW-4",name:"Viktor Hovland",cat:"Golf"},
+  {n:"AW-5",name:"Adrien Dumont de Chassart",cat:"Golf"},{n:"AW-6",name:"Wayne Gretzky",cat:"Hockey"},
+  {n:"AW-7",name:"Darius Garland",cat:"Basketball"},{n:"AW-8",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"AW-9",name:"Manuel Beltre",cat:"Baseball"},{n:"AW-10",name:"Michael Obafemi",cat:"Soccer"},
+  {n:"AW-11",name:"Camilo Diaz",cat:"Baseball"},{n:"AW-12",name:"Norma Palafox",cat:"Soccer-W"},
+  {n:"AW-13",name:"Mateo Fernandez de Oliveira",cat:"Golf"},{n:"AW-14",name:"Kyllian Michee",cat:"Basketball"},
+  {n:"AW-15",name:"Erriyon Knighton",cat:"Track"},
+];
+
+const POOL_LENTICULAR_T1 = [
+  {n:"GL-AH",name:"Aden Holloway",cat:"Basketball"},{n:"GL-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"GL-BF",name:"Bobby Finke",cat:"Swimming"},{n:"GL-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"GL-BU",name:"Jordan Burroughs",cat:"Wrestling"},{n:"GL-CM",name:"Caroline Marks",cat:"Surfing"},
+  {n:"GL-CP",name:"Casey Phair",cat:"Soccer-W"},{n:"GL-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"GL-ES",name:"Evan Stewart",cat:"Football"},{n:"GL-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"GL-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"GL-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"GL-JR",name:"Jaden Rashada",cat:"Football"},{n:"GL-KA",name:"Korbin Albert",cat:"Soccer-W"},
+  {n:"GL-MB",name:"Maya Brady",cat:"Softball"},{n:"GL-MN",name:"Malachi Nelson",cat:"Football"},
+  {n:"GL-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"GL-NA",name:"Malik Nabers",cat:"Football"},
+  {n:"GL-TF",name:"Troy Franklin",cat:"Football"},{n:"GL-TT",name:"Tommy Troy",cat:"Baseball"},
+];
+
+const POOL_LENTICULAR_T2 = [
+  {n:"GL-AD",name:"Adrien Dumont de Chassart",cat:"Golf"},{n:"GL-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"GL-DW",name:"D.J. Wagner",cat:"Basketball"},{n:"GL-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"GL-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"GL-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"GL-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"GL-MH",name:"Max Homa",cat:"Golf"},
+  {n:"GL-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"GL-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_LENTICULAR_T3 = [
+  {n:"GL-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"GL-DG",name:"Darius Garland",cat:"Basketball"},
+  {n:"GL-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"GL-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"GL-TW",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_COINAGE = [
+  {n:"BYQR-1",name:"De'Aaron Fox",cat:"Basketball"},{n:"BYQR-2",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"BYQR-3",name:"D.J. Wagner",cat:"Basketball"},{n:"BYQR-4",name:"Justin Edwards",cat:"Basketball"},
+  {n:"BYQR-5",name:"Jackson Olson",cat:"Media"},{n:"BYQR-6",name:"Erriyon Knighton",cat:"Track"},
+  {n:"BYQR-7",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"BYQR-8",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"BYQR-9",name:"Michael Obafemi",cat:"Soccer"},{n:"BYQR-10",name:"Adrien Dumont de Chassart",cat:"Golf"},
+  {n:"BYQR-11",name:"Francis Marshall",cat:"MMA"},{n:"BYQR-12",name:"Tommy White",cat:"Baseball"},
+  {n:"BYQR-13",name:"Sydney McLaughlin-Levrone",cat:"Track"},{n:"BYQR-14",name:"Manuel Beltre",cat:"Baseball"},
+  {n:"BYQR-15",name:"Aden Holloway",cat:"Basketball"},{n:"BYQR-16",name:"Ian Jackson",cat:"Basketball"},
+  {n:"BYQR-17",name:"Michael Jordan",cat:"Basketball"},{n:"BYQR-18",name:"Troy Franklin",cat:"Football"},
+  {n:"BYQR-19",name:"Gordon Sargent",cat:"Golf"},{n:"BYQR-20",name:"Maya Brady",cat:"Softball"},
+  {n:"BYQR-21",name:"Sam Hurley",cat:"Track"},{n:"BYQR-22",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"BYQR-23",name:"Malik Nabers",cat:"Football"},{n:"BYQR-24",name:"Caroline Marks",cat:"Surfing"},
+  {n:"BYQR-25",name:"Isiah Harwell",cat:"Basketball"},{n:"BYQR-26",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"BYQR-27",name:"Bobby Finke",cat:"Swimming"},{n:"BYQR-28",name:"Bo Nickal",cat:"MMA"},
+  {n:"BYQR-29",name:"Jordan Burroughs",cat:"Wrestling"},{n:"BYQR-30",name:"Casey Phair",cat:"Soccer-W"},
+  {n:"BYQR-31",name:"Konnor McClain",cat:"Gymnastics"},{n:"BYQR-32",name:"Korbin Albert",cat:"Soccer-W"},
+  {n:"BYQR-33",name:"Sebastian Rivera",cat:"Wrestling"},{n:"BYQR-34",name:"U-God",cat:"Rapper"},
+  {n:"BYQR-35",name:"Derek Curiel",cat:"Baseball"},{n:"BYQR-36",name:"Vance Honeycutt",cat:"Baseball"},
+  {n:"BYQR-37",name:"Daniela Moroz",cat:"Kiteboarding"},{n:"BYQR-38",name:"Dillon Gabriel",cat:"Football"},
+  {n:"BYQR-39",name:"Tommy Troy",cat:"Baseball"},{n:"BYQR-40",name:"Nick Kurtz",cat:"Baseball"},
+  {n:"BYQR-41",name:"Logan Diggs",cat:"Football"},{n:"BYQR-42",name:"Dorian Singer",cat:"Football"},
+  {n:"BYQR-43",name:"Ethan Petry",cat:"Baseball"},{n:"BYQR-44",name:"Matt Shaw",cat:"Baseball"},
+  {n:"BYQR-45",name:"Kyllian Michee",cat:"Basketball"},{n:"BYQR-46",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"BYQR-47",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"BYQR-48",name:"Deyna Castellanos",cat:"Soccer-W"},
+  {n:"BYQR-49",name:"Sean Patrick Small",cat:"Actor"},{n:"BYQR-50",name:"Casey O'Neill",cat:"MMA-W"},
+];
+
+const POOL_LITERARY = [
+  {n:"LCP-6",name:"Huckleberry Finn",cat:"Literary"},{n:"LCP-7",name:"Duke and King",cat:"Literary"},
+  {n:"LCP-8",name:"Widow Douglas",cat:"Literary"},{n:"LCP-9",name:"Jim",cat:"Literary"},
+  {n:"LCP-10",name:"Tom Sawyer",cat:"Literary"},{n:"LCP-11",name:"Ichabod Crane",cat:"Literary"},
+  {n:"LCP-12",name:"Becky Thatcher",cat:"Literary"},{n:"LCP-13",name:"Joe Harper",cat:"Literary"},
+  {n:"LCP-14",name:"Dr. Watson",cat:"Literary"},{n:"LCP-15",name:"Sir Henry Baskerville",cat:"Literary"},
+  {n:"LCP-16",name:"Jack Stapleton",cat:"Literary"},{n:"LCP-17",name:"Edmond Dantes",cat:"Literary"},
+  {n:"LCP-18",name:"Mercedes",cat:"Literary"},{n:"LCP-19",name:"Fernand Mondego",cat:"Literary"},
+  {n:"LCP-20",name:"The Time Traveller",cat:"Literary"},{n:"LCP-21",name:"Morlocks",cat:"Literary"},
+  {n:"LCP-22",name:"White Fang",cat:"Literary"},{n:"LCP-23",name:"Captain Ahab",cat:"Literary"},
+  {n:"LCP-24",name:"Moby Dick",cat:"Literary"},{n:"LCP-25",name:"Ishmael",cat:"Literary"},
+  {n:"LCP-26",name:"Lemuel Gulliver",cat:"Literary"},{n:"LCP-27",name:"Houyhnhnm",cat:"Literary"},
+  {n:"LCP-28",name:"Athos",cat:"Literary"},{n:"LCP-29",name:"Porthos",cat:"Literary"},
+  {n:"LCP-30",name:"Aramis",cat:"Literary"},{n:"LCP-31",name:"Doctor Moreau",cat:"Literary"},
+  {n:"LCP-32",name:"Beast Folk",cat:"Literary"},{n:"LCP-33",name:"Edward Prendick",cat:"Literary"},
+  {n:"LCP-34",name:"Phileas Fogg",cat:"Literary"},{n:"LCP-35",name:"Inspector Fix",cat:"Literary"},
+  {n:"LCP-36",name:"Jean Passepartout",cat:"Literary"},{n:"LCP-37",name:"Professor Challenger",cat:"Literary"},
+  {n:"LCP-38",name:"Lord John Roxton",cat:"Literary"},{n:"LCP-39",name:"Iguanodon",cat:"Literary"},
+  {n:"LCP-40",name:"Tom Buchanan",cat:"Literary"},{n:"LCP-41",name:"Jay Gatsby",cat:"Literary"},
+  {n:"LCP-42",name:"Daisy Buchanan",cat:"Literary"},{n:"LCP-43",name:"Nick Carraway",cat:"Literary"},
+  {n:"LCP-44",name:"Inspector Lestrade",cat:"Literary"},{n:"LCP-45",name:"Hester Prynne",cat:"Literary"},
+  {n:"LCP-46",name:"Arthur Dimmesdale",cat:"Literary"},{n:"LCP-47",name:"Mr. Fitzwilliam Darcy",cat:"Literary"},
+  {n:"LCP-48",name:"Elizabeth Bennet",cat:"Literary"},{n:"LCP-49",name:"Mr. Charles Bingley",cat:"Literary"},
+  {n:"LCP-50",name:"Miss Jane Bennet",cat:"Literary"},{n:"LCP-51",name:"Miss Harriet Smith",cat:"Literary"},
+  {n:"LCP-52",name:"Miss Emma Woodhouse",cat:"Literary"},{n:"LCP-53",name:"Mr. George Knightley",cat:"Literary"},
+  {n:"LCP-54",name:"Mr. Frank Churchill",cat:"Literary"},{n:"LCP-55",name:"Miss Elinor Dashwood",cat:"Literary"},
+  {n:"LCP-56",name:"Miss Marianne Dashwood",cat:"Literary"},{n:"LCP-57",name:"Anne Elliot",cat:"Literary"},
+  {n:"LCP-58",name:"Mr. William Elliot",cat:"Literary"},{n:"LCP-59",name:"Captain Frederick Wentworth",cat:"Literary"},
+  {n:"LCP-60",name:"Jean Valjean",cat:"Literary"},{n:"LCP-61",name:"Inspector Javert",cat:"Literary"},
+  {n:"LCP-62",name:"Heathcliff",cat:"Literary"},{n:"LCP-63",name:"Catherine",cat:"Literary"},
+  {n:"LCP-64",name:"Jo March",cat:"Literary"},{n:"LCP-65",name:"Meg March",cat:"Literary"},
+  {n:"LCP-66",name:"Dorothy Gale",cat:"Literary"},{n:"LCP-67",name:"The Tin Man",cat:"Literary"},
+  {n:"LCP-68",name:"Scarecrow",cat:"Literary"},{n:"LCP-69",name:"Cowardly Lion",cat:"Literary"},
+  {n:"LCP-70",name:"Wicked Witch Of The West",cat:"Literary"},{n:"LCP-71",name:"Winnie",cat:"Literary"},
+  {n:"LCP-72",name:"Christopher Robin",cat:"Literary"},{n:"LCP-73",name:"Baloo",cat:"Literary"},
+  {n:"LCP-74",name:"Shere Khan",cat:"Literary"},{n:"LCP-75",name:"Mowgli",cat:"Literary"},
+  {n:"LCP-76",name:"Tarzan",cat:"Literary"},{n:"LCP-77",name:"Jane Porter",cat:"Literary"},
+  {n:"LCP-78",name:"Professor Archimedes Porter",cat:"Literary"},{n:"LCP-79",name:"Quasimodo",cat:"Literary"},
+  {n:"LCP-80",name:"Esmeralda",cat:"Literary"},{n:"LCP-81",name:"Peter Pan",cat:"Literary"},
+  {n:"LCP-82",name:"Captain Hook",cat:"Literary"},{n:"LCP-83",name:"Jim Dillingham Young",cat:"Literary"},
+  {n:"LCP-84",name:"Della Dillingham Young",cat:"Literary"},{n:"LCP-85",name:"Plesiosaurus",cat:"Literary"},
+  {n:"LCP-86",name:"Professor Otto Lidenbrock",cat:"Literary"},{n:"LCP-87",name:"Professor Aronnax",cat:"Literary"},
+  {n:"LCP-88",name:"Captain Nemo",cat:"Literary"},{n:"LCP-89",name:"Ebenezer Scrooge",cat:"Literary"},
+  {n:"LCP-90",name:"Tiny Tim",cat:"Literary"},{n:"LCP-91",name:"Bob Cratchit",cat:"Literary"},
+  {n:"LCP-92",name:"Oliver Twist",cat:"Literary"},{n:"LCP-93",name:"Alice",cat:"Literary"},
+  {n:"LCP-94",name:"The Queen of Hearts",cat:"Literary"},{n:"LCP-95",name:"Cheshire Cat",cat:"Literary"},
+  {n:"LCP-96",name:"White Rabbit",cat:"Literary"},{n:"LCP-97",name:"Dr. Henry Jeckyll",cat:"Literary"},
+  {n:"LCP-98",name:"Mr. Edward Hyde",cat:"Literary"},{n:"LCP-99",name:"Victor Frankenstein",cat:"Literary"},
+  {n:"LCP-100",name:"Frankensteins Monster",cat:"Literary"},
+];
+
+const POOL_SPLASH_MEM = [
+  {n:"SA-MH",name:"Max Homa",cat:"Golf"},{n:"SM-AH",name:"Aden Holloway",cat:"Basketball"},
+  {n:"SM-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"SM-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"SM-BF",name:"Bobby Finke",cat:"Swimming"},{n:"SM-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"SM-BY",name:"Bryce Young",cat:"Football"},{n:"SM-CM",name:"Caroline Marks",cat:"Surfing"},
+  {n:"SM-CS",name:"C.J. Stroud",cat:"Football"},{n:"SM-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"SM-DG",name:"Darius Garland",cat:"Basketball"},{n:"SM-DW",name:"D.J. Wagner",cat:"Basketball"},
+  {n:"SM-EK",name:"Erriyon Knighton",cat:"Track"},{n:"SM-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"SM-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"SM-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"SM-JE",name:"Justin Edwards",cat:"Basketball"},{n:"SM-KM",name:"Konnor McClain",cat:"Gymnastics"},
+  {n:"SM-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"SM-MB",name:"Maya Brady",cat:"Softball"},
+  {n:"SM-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"SM-MW",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"SM-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"SM-SH",name:"Sam Hurley",cat:"Track"},
+  {n:"SM-TF",name:"Troy Franklin",cat:"Football"},{n:"SM-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"SM-TW",name:"Tiger Woods",cat:"Golf"},{n:"SM-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_SCL_T1 = [
+  {n:"SCL-AH",name:"Aden Holloway",cat:"Basketball"},{n:"SCL-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"SCL-BF",name:"Bobby Finke",cat:"Swimming"},{n:"SCL-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"SCL-BU",name:"Jordan Burroughs",cat:"Wrestling"},{n:"SCL-CM",name:"Caroline Marks",cat:"Surfing"},
+  {n:"SCL-CP",name:"Casey Phair",cat:"Soccer-W"},{n:"SCL-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"SCL-ES",name:"Evan Stewart",cat:"Football"},{n:"SCL-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"SCL-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"SCL-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"SCL-JR",name:"Jaden Rashada",cat:"Football"},{n:"SCL-KA",name:"Korbin Albert",cat:"Soccer-W"},
+  {n:"SCL-MB",name:"Maya Brady",cat:"Softball"},{n:"SCL-MN",name:"Malachi Nelson",cat:"Football"},
+  {n:"SCL-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"SCL-NA",name:"Malik Nabers",cat:"Football"},
+  {n:"SCL-TF",name:"Troy Franklin",cat:"Football"},{n:"SCL-TT",name:"Tommy Troy",cat:"Baseball"},
+];
+
+const POOL_SCL_T2 = [
+  {n:"SCL-AD",name:"Adrien Dumont de Chassart",cat:"Golf"},{n:"SCL-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"SCL-DW",name:"D.J. Wagner",cat:"Basketball"},{n:"SCL-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"SCL-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"SCL-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"SCL-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"SCL-MH",name:"Max Homa",cat:"Golf"},
+  {n:"SCL-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"SCL-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+const POOL_SCL_T3 = [
+  {n:"SCL-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"SCL-DG",name:"Darius Garland",cat:"Basketball"},
+  {n:"SCL-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"SCL-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"SCL-TW",name:"Tiger Woods",cat:"Golf"},
+];
+
+const POOL_MASTERPIECES = [
+  {n:"GMAA-AB",name:"Albert Bierstadt - Sundown at Yosemite",cat:"Art"},
+  {n:"GMAA-BI",name:"Albert Bierstadt - Yellowstone Falls",cat:"Art"},
+  {n:"GMAA-BO",name:"Bouguereau - The Young Shepherdess",cat:"Art"},
+  {n:"GMAA-CA",name:"Pissarro - A Village Through the Trees",cat:"Art"},
+  {n:"GMAA-CB",name:"Caillebotte - Partie de Bateau",cat:"Art"},
+  {n:"GMAA-CG",name:"Caillebotte - Yerres, Colonnade of the Casino",cat:"Art"},
+  {n:"GMAA-CI",name:"Caffi - Egypt, caravan in the desert",cat:"Art"},
+  {n:"GMAA-CJ",name:"Cozens - Cetara on the Gulf of Salerno",cat:"Art"},
+  {n:"GMAA-CL",name:"Pissarro - A Creek in Saint Thomas, Antilles",cat:"Art"},
+  {n:"GMAA-CM",name:"Monet - Poppy Field (Giverny)",cat:"Art"},
+  {n:"GMAA-CO",name:"Cozens - Saint Peter's from the Tiber",cat:"Art"},
+  {n:"GMAA-CP",name:"Pissarro - Street in the Snow, Louveciennes",cat:"Art"},
+  {n:"GMAA-CS",name:"Pissarro - Woman Carrying a Pitcher",cat:"Art"},
+  {n:"GMAA-CZ",name:"Cozens - Valley of the Eisak Near Brixen",cat:"Art"},
+  {n:"GMAA-DE",name:"Degas - Landscape with Smokestacks",cat:"Art"},
+  {n:"GMAA-DG",name:"Degas - Beach at Low Tide",cat:"Art"},
+  {n:"GMAA-ED",name:"Degas - Ballet Dancers in the Wings",cat:"Art"},
+  {n:"GMAA-EM",name:"Manet - Sea View, Calm Weather",cat:"Art"},
+  {n:"GMAA-ER",name:"Munch - Two Women on the Shore",cat:"Art"},
+  {n:"GMAA-EV",name:"Munch - Young Woman on the Beach",cat:"Art"},
+  {n:"GMAA-FC",name:"Church - View of Cotopaxi",cat:"Art"},
+  {n:"GMAA-GA",name:"Gauguin - Nativity",cat:"Art"},
+  {n:"GMAA-GC",name:"Caillebotte - Skiffs on the Yerres",cat:"Art"},
+  {n:"GMAA-GG",name:"Gauguin - Van Gogh Painting Sunflowers",cat:"Art"},
+  {n:"GMAA-GI",name:"Gauguin - Tahitian Hut",cat:"Art"},
+  {n:"GMAA-GN",name:"Gauguin - Self Portrait with Halo and Snake",cat:"Art"},
+  {n:"GMAA-GP",name:"Gauguin - What's New?",cat:"Art"},
+  {n:"GMAA-GS",name:"Seurat - The Mower",cat:"Art"},
+  {n:"GMAA-GU",name:"Gauguin - Woman with a Flower",cat:"Art"},
+  {n:"GMAA-GV",name:"Caillebotte - Rue De Paris, Jour De Pluie",cat:"Art"},
+  {n:"GMAA-HT",name:"Toulouse-Lautrec - Elsa, The Viennese",cat:"Art"},
+  {n:"GMAA-HW",name:"Homer - North Woods Club, Adirondacks",cat:"Art"},
+  {n:"GMAA-IC",name:"Caffi - Nice, View of the beach",cat:"Art"},
+  {n:"GMAA-IJ",name:"Ito Jakuchu - Tiger",cat:"Art"},
+  {n:"GMAA-JB",name:"Corot - Ville d'Avray",cat:"Art"},
+  {n:"GMAA-JC",name:"Cozens - Pine Trees in the Mountains",cat:"Art"},
+  {n:"GMAA-JV",name:"van Ruisdael - Ruins of the Castle of Egmond",cat:"Art"},
+  {n:"GMAA-MC",name:"Monet - Cliff Walk at Pourville",cat:"Art"},
+  {n:"GMAA-ME",name:"Manet - The Cats Rendezvous",cat:"Art"},
+  {n:"GMAA-MH",name:"Munch - The Sun",cat:"Art"},
+  {n:"GMAA-MN",name:"Manet - Civil War",cat:"Art"},
+  {n:"GMAA-MO",name:"Monet - Bordighera",cat:"Art"},
+  {n:"GMAA-MT",name:"Moran - Rome, from the Campagna, Sunset",cat:"Art"},
+  {n:"GMAA-OD",name:"Redon - Andromeda",cat:"Art"},
+  {n:"GMAA-OR",name:"Redon - The Chariot of Apollo",cat:"Art"},
+  {n:"GMAA-PA",name:"Cezanne - The Basket of Apples",cat:"Art"},
+  {n:"GMAA-PC",name:"Pissarro - Snow at Louveciennes",cat:"Art"},
+  {n:"GMAA-PG",name:"Gauguin - Crouching Tahitian Woman",cat:"Art"},
+  {n:"GMAA-PI",name:"Pissarro - Farmyard",cat:"Art"},
+  {n:"GMAA-PL",name:"Gauguin - Cows on the Seashore",cat:"Art"},
+  {n:"GMAA-PO",name:"Pissarro - Rabbit Warren at Pontoise, Snow",cat:"Art"},
+  {n:"GMAA-PR",name:"Pissarro - Bridge at Montfoucault",cat:"Art"},
+  {n:"GMAA-RE",name:"Redon - Flower Clouds",cat:"Art"},
+  {n:"GMAA-TH",name:"van Doesburg - Abstract Portrait",cat:"Art"},
+  {n:"GMAA-TR",name:"Rousseau - View of Saleve, near Geneva",cat:"Art"},
+  {n:"GMAA-TV",name:"van Doesburg - Composition I (Still life)",cat:"Art"},
+  {n:"GMAA-VA",name:"van Doesburg - Heroic Movement",cat:"Art"},
+  {n:"GMAA-VE",name:"Velasco - Piramide del Sol",cat:"Art"},
+  {n:"GMAA-VJ",name:"Velasco - Cardon",cat:"Art"},
+  {n:"GMAA-WA",name:"Kandinsky - Color Study - Squares with Circles",cat:"Art"},
+  {n:"GMAA-WB",name:"Bouguereau - Head Of A Young Girl",cat:"Art"},
+  {n:"GMAA-WH",name:"Homer - Breaking Storm, Coast of Maine",cat:"Art"},
+  {n:"GMAA-WI",name:"Bouguereau - The Summer",cat:"Art"},
+];
+
+const POOL_MUSEUM_WWII = [
+  {n:"MCB-1",name:"Battle of the Atlantic",cat:"History"},{n:"MCB-2",name:"Battle of Dunkirk",cat:"History"},
+  {n:"MCB-3",name:"Battle of Britain",cat:"History"},{n:"MCB-4",name:"Siege of Leningrad",cat:"History"},
+  {n:"MCB-5",name:"Battle of Pearl Harbor",cat:"History"},{n:"MCB-6",name:"Battle of Midway",cat:"History"},
+  {n:"MCB-7",name:"Battle of Guadalcanal",cat:"History"},{n:"MCB-8",name:"Battle of Stalingrad",cat:"History"},
+  {n:"MCB-9",name:"Operation Torch",cat:"History"},{n:"MCB-10",name:"Battle of Kursk",cat:"History"},
+  {n:"MCB-11",name:"Battle of Monte Cassino",cat:"History"},{n:"MCB-12",name:"Battle Of The Philippines",cat:"History"},
+  {n:"MCB-13",name:"Battle of Normandy",cat:"History"},{n:"MCB-14",name:"Battle of Leyte Gulf",cat:"History"},
+  {n:"MCB-15",name:"Battle of the Bulge",cat:"History"},{n:"MCB-16",name:"Battle of Iwo Jima",cat:"History"},
+  {n:"MCB-17",name:"Battle of Berlin",cat:"History"},{n:"MCB-18",name:"Victory In Europe",cat:"History"},
+  {n:"MCB-19",name:"Battle of Okinawa",cat:"History"},{n:"MCB-20",name:"Victory Over Japan",cat:"History"},
+];
+
+const POOL_MUSEUM_MIDWAY = [
+  {n:"MCM-1",name:"Keel Land",cat:"History"},{n:"MCM-2",name:"USS Midway is Commissioned",cat:"History"},
+  {n:"MCM-3",name:"Operation Frostbite",cat:"History"},{n:"MCM-4",name:"Operation Sandy",cat:"History"},
+  {n:"MCM-5",name:"USS Midway Pilots Shoot Down First MiG",cat:"History"},
+  {n:"MCM-6",name:"USS Midway Receives Vietnam Service Medal",cat:"History"},
+  {n:"MCM-7",name:"USS Midway First American Carrier Home Ported Abroad",cat:"History"},
+  {n:"MCM-8",name:"Operation Frequent Wind",cat:"History"},
+  {n:"MCM-9",name:"Operation Desert Storm",cat:"History"},
+  {n:"MCM-10",name:"Operation Fiery Vigil",cat:"History"},
+  {n:"MCM-11",name:"USS Midway Longest Serving Carrier of 20th Century",cat:"History"},
+  {n:"MCM-12",name:"Midway - Independence Turnover at Pearl Harbor",cat:"History"},
+  {n:"MCM-13",name:"USS Midway Donated to San Diego Museum",cat:"History"},
+  {n:"MCM-14",name:"USS Midway is Decommissioned in San Diego",cat:"History"},
+];
+
+const POOL_ALASKA = [
+  {n:"AGN-1",name:"Vitus Bering Explores the North Pacific",cat:"History"},
+  {n:"AGN-2",name:"Naturalist George Wilhelm Steller Visits Alaska",cat:"History"},
+  {n:"AGN-3",name:"Captain James Cook Searches for the North Passageway",cat:"History"},
+  {n:"AGN-4",name:"Russian and Tlingit People Come Into Conflict at Old Sitka",cat:"History"},
+  {n:"AGN-5",name:"Russians Force Tlingit People to Flee Old Sitka",cat:"History"},
+  {n:"AGN-6",name:"Russian Exploration of Mainland Alaska",cat:"History"},
+  {n:"AGN-7",name:"Extraction of Alaska's Natural Resources",cat:"History"},
+  {n:"AGN-8",name:"U.S. Purchases Alaska From Russia",cat:"History"},
+  {n:"AGN-9",name:"First Alaskan Newspaper: The Sitka Times",cat:"History"},
+  {n:"AGN-10",name:"Tlingit Leader Kowee and Joe Juneau Strike Gold",cat:"History"},
+  {n:"AGN-11",name:"Juneau Alaska is Founded",cat:"History"},
+  {n:"AGN-12",name:"Establishment of Afognak Reserve",cat:"History"},
+  {n:"AGN-13",name:"Alaskan Gold Rush",cat:"History"},
+  {n:"AGN-14",name:"Establishment of Alexander Archipelago Forest Reserve",cat:"History"},
+  {n:"AGN-15",name:"Alaska Sends its First Congressional Delegate",cat:"History"},
+  {n:"AGN-16",name:"Establishment of Sitka National Historical Park",cat:"History"},
+  {n:"AGN-17",name:"Alaska Gains Territorial Status",cat:"History"},
+  {n:"AGN-18",name:"The Great Eruption of Mount Katmai",cat:"History"},
+  {n:"AGN-19",name:"Establishment of Denali National Park",cat:"History"},
+  {n:"AGN-20",name:"Establishment of Katmai National Park",cat:"History"},
+  {n:"AGN-21",name:"Establishment of Glacier Bay National Park",cat:"History"},
+  {n:"AGN-22",name:"WWII: Japan Invades the Aleutian Islands",cat:"History"},
+  {n:"AGN-23",name:"Alaskans Elect Delegates to Constitutional Convention",cat:"History"},
+  {n:"AGN-24",name:"Alaska's Statehood Measure Passes",cat:"History"},
+  {n:"AGN-25",name:"Alaska Joins the Union",cat:"History"},
+];
+
+const POOL_AUTO_INSCR = [
+  {n:"A-AG",name:"Anthony Gutierrez",cat:"Baseball"},{n:"A-AJ",name:"Ali Jennings III",cat:"Football"},
+  {n:"A-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"A-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"A-BG",name:"Brandon Garrison",cat:"Basketball"},{n:"A-BL",name:"Miguel Bleis",cat:"Baseball"},
+  {n:"A-BT",name:"Brayden Taylor",cat:"Baseball"},{n:"A-CG",name:"Carter Graham",cat:"Baseball"},
+  {n:"A-CU",name:"Derek Curiel",cat:"Baseball"},{n:"A-DC",name:"Deyna Castellanos",cat:"Soccer-W"},
+  {n:"A-DP",name:"Dink Pate",cat:"Basketball"},{n:"A-DS",name:"Dorian Singer",cat:"Football"},
+  {n:"A-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"A-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"A-JB",name:"Jordan Burroughs",cat:"Wrestling"},{n:"A-JD",name:"Jurrion Dickey",cat:"Football"},
+  {n:"A-JE",name:"Justin Edwards",cat:"Basketball"},{n:"A-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"A-JS",name:"Jackson Shelstad",cat:"Basketball"},{n:"A-KM",name:"Konnor McClain",cat:"Gymnastics"},
+  {n:"A-LD",name:"Logan Diggs",cat:"Football"},{n:"A-MB",name:"Manuel Beltre",cat:"Baseball"},
+  {n:"A-MC",name:"Mookie Cook",cat:"Basketball"},{n:"A-MR",name:"Melina Rebimbas",cat:"Soccer-W"},
+  {n:"A-MS",name:"Matt Shaw",cat:"Baseball"},{n:"A-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"A-TW",name:"Tommy White",cat:"Baseball"},{n:"A-UG",name:"U-God",cat:"Rapper"},
+];
+
+const POOL_MEM = [
+  {n:"M-AH",name:"Aden Holloway",cat:"Basketball"},{n:"M-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"M-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"M-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"M-BN",name:"Bo Nickal",cat:"MMA"},{n:"M-BY",name:"Bryce Young",cat:"Football"},
+  {n:"M-CM",name:"Caroline Marks",cat:"Surfing"},{n:"M-CP",name:"Casey Phair",cat:"Soccer-W"},
+  {n:"M-CS",name:"C.J. Stroud",cat:"Football"},{n:"M-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"M-DG",name:"Darius Garland",cat:"Basketball"},{n:"M-DP",name:"Dink Pate",cat:"Basketball"},
+  {n:"M-DW",name:"D.J. Wagner",cat:"Basketball"},{n:"M-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"M-GS",name:"Gordon Sargent",cat:"Golf"},{n:"M-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"M-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"M-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"M-JE",name:"Justin Edwards",cat:"Basketball"},{n:"M-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"M-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"M-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"M-MB",name:"Maya Brady",cat:"Softball"},{n:"M-MH",name:"Max Homa",cat:"Golf"},
+  {n:"M-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"M-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"M-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"M-NI",name:"Nicholaus Iamaleava",cat:"Football"},
+  {n:"N-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"M-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"M-SH",name:"Sam Hurley",cat:"Track"},{n:"M-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"M-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"M-TT",name:"Tommy Troy",cat:"Baseball"},
+  {n:"M-TW",name:"Tiger Woods",cat:"Golf"},{n:"M-WH",name:"Tommy White",cat:"Baseball"},
+];
+
+
+// ── ALL-WORLD PARALLELS ───────────────────────────────────────────────────────
+const POOL_AW_BASE = [
+  {n:"AW-1",name:"Deyna Castellanos",cat:"Soccer-W"},{n:"AW-2",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"AW-3",name:"Casey Phair",cat:"Soccer-W"},{n:"AW-4",name:"Viktor Hovland",cat:"Golf"},
+  {n:"AW-5",name:"Adrien Dumont de Chassart",cat:"Golf"},{n:"AW-6",name:"Wayne Gretzky",cat:"Hockey"},
+  {n:"AW-7",name:"Darius Garland",cat:"Basketball"},{n:"AW-8",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"AW-9",name:"Manuel Beltre",cat:"Baseball"},{n:"AW-10",name:"Michael Obafemi",cat:"Soccer"},
+  {n:"AW-11",name:"Camilo Diaz",cat:"Baseball"},{n:"AW-12",name:"Norma Palafox",cat:"Soccer-W"},
+  {n:"AW-13",name:"Mateo Fernandez de Oliveira",cat:"Golf"},{n:"AW-14",name:"Kyllian Michee",cat:"Basketball"},
+  {n:"AW-15",name:"Erriyon Knighton",cat:"Track"},
+];
+const POOL_AW_AUTO = [
+  {n:"AW-1",name:"Deyna Castellanos",cat:"Soccer-W"},{n:"AW-2",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"AW-3",name:"Casey Phair",cat:"Soccer-W"},{n:"AW-5",name:"Adrien Dumont de Chassart",cat:"Golf"},
+  {n:"AW-7",name:"Darius Garland",cat:"Basketball"},{n:"AW-8",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"AW-9",name:"Manuel Beltre",cat:"Baseball"},{n:"AW-11",name:"Camilo Diaz",cat:"Baseball"},
+  {n:"AW-13",name:"Mateo Fernandez de Oliveira",cat:"Golf"},{n:"AW-14",name:"Kyllian Michee",cat:"Basketball"},
+  {n:"AW-15",name:"Erriyon Knighton",cat:"Track"},
+];
+
+// ── YG PARALLELS ──────────────────────────────────────────────────────────────
+const POOL_YG = [
+  {n:"YG-1",name:"Dillon Gabriel",cat:"Football"},{n:"YG-2",name:"Aden Holloway",cat:"Basketball"},
+  {n:"YG-3",name:"Vance Honeycutt",cat:"Baseball"},{n:"YG-4",name:"Adrien Dumont de Chassart",cat:"Golf"},
+  {n:"YG-5",name:"Troy Franklin",cat:"Football"},{n:"YG-6",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"YG-7",name:"Trinity Rodman",cat:"Soccer-W"},{n:"YG-8",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"YG-9",name:"Tommy White",cat:"Baseball"},{n:"YG-10",name:"Bo Nickal",cat:"MMA"},
+  {n:"YG-11",name:"Tommy Troy",cat:"Baseball"},{n:"YG-12",name:"Bobby Finke",cat:"Swimming"},
+  {n:"YG-13",name:"Fidel Barajas",cat:"Soccer"},{n:"YG-14",name:"Brandon Garrison",cat:"Basketball"},
+  {n:"YG-15",name:"Sebastian Rivera",cat:"Wrestling"},{n:"YG-16",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"YG-17",name:"Sam Hurley",cat:"Track"},{n:"YG-18",name:"Casey Phair",cat:"Soccer-W"},
+  {n:"YG-19",name:"Rose Zhang",cat:"Golf-W"},{n:"YG-20",name:"Daniela Moroz",cat:"Kiteboarding"},
+  {n:"YG-21",name:"Nick Kurtz",cat:"Baseball"},{n:"YG-22",name:"Derek Curiel",cat:"Baseball"},
+  {n:"YG-23",name:"Mookie Cook",cat:"Basketball"},{n:"YG-24",name:"Deyna Castellanos",cat:"Soccer-W"},
+  {n:"YG-25",name:"Miguel Bleis",cat:"Baseball"},{n:"YG-26",name:"Frank Gore Jr.",cat:"Football"},
+  {n:"YG-27",name:"Maya Brady",cat:"Softball"},{n:"YG-28",name:"Lydia Warren",cat:"MMA-W"},
+  {n:"YG-29",name:"Matt Shaw",cat:"Baseball"},{n:"YG-30",name:"Dorian Singer",cat:"Football"},
+  {n:"YG-31",name:"Malik Nabers",cat:"Football"},{n:"YG-32",name:"Erriyon Knighton",cat:"Track"},
+  {n:"YG-33",name:"Malachi Nelson",cat:"Football"},{n:"YG-34",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"YG-35",name:"Leodalis De Vries",cat:"Baseball"},{n:"YG-36",name:"Ethan Petry",cat:"Baseball"},
+  {n:"YG-37",name:"Kyllian Michee",cat:"Basketball"},{n:"YG-38",name:"Michael Obafemi",cat:"Soccer"},
+  {n:"YG-39",name:"Korbin Albert",cat:"Soccer-W"},{n:"YG-40",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"YG-41",name:"Konnor McClain",cat:"Gymnastics"},{n:"YG-42",name:"Gordon Sargent",cat:"Golf"},
+  {n:"YG-43",name:"Jurrion Dickey",cat:"Football"},{n:"YG-44",name:"Ian Jackson",cat:"Basketball"},
+  {n:"YG-45",name:"Justin Edwards",cat:"Basketball"},{n:"YG-46",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"YG-47",name:"Evan Stewart",cat:"Football"},{n:"YG-48",name:"Jackson Shelstad",cat:"Basketball"},
+  {n:"YG-49",name:"Caroline Marks",cat:"Surfing"},{n:"YG-50",name:"Jaden Rashada",cat:"Football"},
+];
+
+// ── EXQUISITE PARALLELS ───────────────────────────────────────────────────────
+const POOL_EXQ_ROOKIE_GOLD = [
+  {n:"R-AH",name:"Aden Holloway",cat:"Basketball"},{n:"R-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"R-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"R-BT",name:"Brayden Taylor",cat:"Baseball"},
+  {n:"R-CM",name:"Caroline Marks",cat:"Surfing"},{n:"R-DG",name:"Dillon Gabriel",cat:"Football"},
+  {n:"R-EK",name:"Erriyon Knighton",cat:"Track"},{n:"R-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"R-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"R-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"R-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"R-JE",name:"Justin Edwards",cat:"Basketball"},
+  {n:"R-JR",name:"Jaden Rashada",cat:"Football"},{n:"R-JT",name:"Jamari Thrash",cat:"Football"},
+  {n:"R-KM",name:"Kevin McGonigle",cat:"Baseball"},{n:"R-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"R-MC",name:"Mookie Cook",cat:"Basketball"},{n:"R-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"R-MS",name:"Matt Shaw",cat:"Baseball"},{n:"R-MW",name:"Miles Chamley-Watson",cat:"Fencing"},
+  {n:"R-NE",name:"Malachi Nelson",cat:"Football"},{n:"R-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"R-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"R-TW",name:"Tommy White",cat:"Baseball"},
+];
+const POOL_EXQ_AUTO_GOLD = [
+  {n:"RA-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"RA-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"RA-CM",name:"Caroline Marks",cat:"Surfing"},{n:"RA-DG",name:"Dillon Gabriel",cat:"Football"},
+  {n:"RA-GS",name:"Gordon Sargent",cat:"Golf"},{n:"RA-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"RA-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"RA-MB",name:"Maya Brady",cat:"Softball"},
+  {n:"RA-MS",name:"Matt Shaw",cat:"Baseball"},{n:"RA-SH",name:"Sam Hurley",cat:"Track"},
+];
+const POOL_EXQ_AUTO_BLACK = [
+  {n:"RA-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"RA-BF",name:"Bobby Finke",cat:"Swimming"},
+  {n:"RA-DG",name:"Dillon Gabriel",cat:"Football"},{n:"RA-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"RA-JR",name:"Jaden Rashada",cat:"Football"},{n:"RA-KM",name:"Konnor McClain",cat:"Gymnastics"},
+  {n:"RA-MB",name:"Maya Brady",cat:"Softball"},{n:"RA-MS",name:"Matt Shaw",cat:"Baseball"},
+  {n:"RA-SH",name:"Sam Hurley",cat:"Track"},
+];
+const POOL_EXQ_BASE_AUTO_GOLD = [
+  {n:"V-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"V-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"V-MJ",name:"Michael Jordan",cat:"Basketball"},
+];
+const POOL_EXQ_PATCH_GOLD = [
+  {n:"RAP-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"RAP-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"RAP-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"RAP-LD",name:"Leodalis De Vries",cat:"Baseball"},
+];
+
+// ── BLACK DIAMOND PARALLELS ───────────────────────────────────────────────────
+const POOL_BD_RED = [
+  {n:"BD-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"BD-DG",name:"Darius Garland",cat:"Basketball"},
+  {n:"BD-DW",name:"D.J. Wagner",cat:"Basketball"},{n:"BD-MJ",name:"Michael Jordan",cat:"Basketball"},
+  {n:"BD-TW",name:"Tiger Woods",cat:"Golf"},
+];
+const POOL_BD_AUTO_BLACK = [
+  {n:"BD-DF",name:"De'Aaron Fox",cat:"Basketball"},{n:"BD-DG",name:"Darius Garland",cat:"Basketball"},
+  {n:"BD-DW",name:"D.J. Wagner",cat:"Basketball"},
+];
+const POOL_BD_GEO_BLACK = [
+  {n:"BDG-CS",name:"C.J. Stroud",cat:"Football"},{n:"BDG-DF",name:"De'Aaron Fox",cat:"Basketball"},
+  {n:"BDG-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+];
+const POOL_BDRG_RED = [
+  {n:"BDRG-AH",name:"Aden Holloway",cat:"Basketball"},{n:"BDRG-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"BDRG-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"BDRG-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"BDRG-CM",name:"Caroline Marks",cat:"Surfing"},{n:"BDRG-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"BDRG-EK",name:"Erriyon Knighton",cat:"Track"},{n:"BDRG-GA",name:"Dillon Gabriel",cat:"Football"},
+  {n:"BDRG-GS",name:"Gordon Sargent",cat:"Golf"},{n:"BDRG-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"BDRG-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"BDRG-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"BDRG-JE",name:"Justin Edwards",cat:"Basketball"},{n:"BDRG-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"BDRG-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"BDRG-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"BDRG-MB",name:"Maya Brady",cat:"Softball"},{n:"BDRG-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"BDRG-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"BDRG-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"BDRG-SH",name:"Sam Hurley",cat:"Track"},{n:"BDRG-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"BDRG-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"BDRG-TW",name:"Tommy White",cat:"Baseball"},
+  {n:"BDRG-VH",name:"Vance Honeycutt",cat:"Baseball"},
+];
+const POOL_BDRG_AUTO_BLACK = [
+  {n:"BDRG-AH",name:"Aden Holloway",cat:"Basketball"},{n:"BDRG-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"BDRG-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"BDRG-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"BDRG-CM",name:"Caroline Marks",cat:"Surfing"},{n:"BDRG-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"BDRG-EK",name:"Erriyon Knighton",cat:"Track"},{n:"BDRG-GA",name:"Dillon Gabriel",cat:"Football"},
+  {n:"BDRG-GS",name:"Gordon Sargent",cat:"Golf"},{n:"BDRG-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"BDRG-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"BDRG-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"BDRG-JE",name:"Justin Edwards",cat:"Basketball"},{n:"BDRG-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"BDRG-KM",name:"Konnor McClain",cat:"Gymnastics"},{n:"BDRG-LD",name:"Leodalis De Vries",cat:"Baseball"},
+  {n:"BDRG-MB",name:"Maya Brady",cat:"Softball"},{n:"BDRG-MN",name:"Malik Nabers",cat:"Football"},
+  {n:"BDRG-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"BDRG-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"BDRG-TF",name:"Troy Franklin",cat:"Football"},{n:"BDRG-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+  {n:"BDRG-TW",name:"Tommy White",cat:"Baseball"},{n:"BDRG-VH",name:"Vance Honeycutt",cat:"Baseball"},
+];
+const POOL_BDR_PB_1 = [{n:"BDR-CS",name:"C.J. Stroud",cat:"Football"}];
+const POOL_BDR_PB_2 = [{n:"BDR-DF",name:"De'Aaron Fox",cat:"Basketball"}];
+const POOL_BDR_PB_4 = [
+  {n:"BDR-TW",name:"Tiger Woods",cat:"Golf"},{n:"BDR-MJ",name:"Michael Jordan",cat:"Basketball"},
+  {n:"BDR-WG",name:"Wayne Gretzky",cat:"Hockey"},
+];
+const POOL_BDRR_PB_1 = [
+  {n:"BDRR-CM",name:"Caroline Marks",cat:"Surfing"},{n:"BDRR-IH",name:"Isiah Harwell",cat:"Basketball"},
+  {n:"BDRR-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"BDRR-JR",name:"Jaden Rashada",cat:"Football"},
+  {n:"BDRR-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"BDRR-MB",name:"Maya Brady",cat:"Softball"},
+  {n:"BDRR-MN",name:"Malik Nabers",cat:"Football"},{n:"BDRR-SH",name:"Sam Hurley",cat:"Track"},
+];
+const POOL_BDRR_PB_2 = [
+  {n:"BDRR-AH",name:"Aden Holloway",cat:"Basketball"},{n:"BDRR-BN",name:"Bo Nickal",cat:"MMA"},
+  {n:"BDRR-EH",name:"Ethan Holliday",cat:"Baseball"},{n:"BDRR-GS",name:"Gordon Sargent",cat:"Golf"},
+  {n:"BDRR-JB",name:"Jordan Burroughs",cat:"Wrestling"},{n:"BDRR-TF",name:"Troy Franklin",cat:"Football"},
+  {n:"BDRR-TW",name:"Tommy White",cat:"Baseball"},
+];
+const POOL_BDRR_PB_3 = [
+  {n:"BDRR-AE",name:"Audric Estime",cat:"Football"},{n:"BDRR-AT",name:"Alyssa Thompson",cat:"Soccer-W"},
+  {n:"BDRR-GT",name:"Gisele Thompson",cat:"Soccer-W"},{n:"BDRR-NE",name:"Malachi Nelson",cat:"Football"},
+  {n:"BDRR-RZ",name:"Rose Zhang",cat:"Golf-W"},
+];
+const POOL_BDRR_PB_4 = [
+  {n:"BDRR-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"BDRR-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"BDRR-JE",name:"Justin Edwards",cat:"Basketball"},{n:"BDRR-NK",name:"Nick Kurtz",cat:"Baseball"},
+  {n:"BDRR-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+];
+
+// ── SP AUTHENTIC / EXQUISITE RETRO AUTOS ─────────────────────────────────────
+const POOL_SPA_2000 = [
+  {n:"00-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"00-EH",name:"Ethan Holliday",cat:"Baseball"},
+  {n:"00-EK",name:"Erriyon Knighton",cat:"Track"},{n:"00-EV",name:"Evan Stewart",cat:"Football"},
+  {n:"00-GA",name:"Dillon Gabriel",cat:"Football"},{n:"00-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"00-JR",name:"Jaden Rashada",cat:"Football"},{n:"00-TW",name:"Tommy White",cat:"Baseball"},
+  {n:"00-AJ",name:"Ali Jennings III",cat:"Football"},{n:"00-DS",name:"Dorian Singer",cat:"Football"},
+  {n:"00-JD",name:"Jurrion Dickey",cat:"Football"},{n:"00-LD",name:"Logan Diggs",cat:"Football"},
+  {n:"00-NE",name:"Malachi Nelson",cat:"Football"},{n:"00-TF",name:"Troy Franklin",cat:"Football"},
+];
+const POOL_SPA_2001 = [
+  {n:"01-AG",name:"Anthony Gutierrez",cat:"Baseball"},{n:"01-BL",name:"Miguel Bleis",cat:"Baseball"},
+  {n:"01-EP",name:"Ethan Petry",cat:"Baseball"},{n:"01-KM",name:"Kevin McGonigle",cat:"Baseball"},
+  {n:"01-LD",name:"Leodalis De Vries",cat:"Baseball"},{n:"01-MB",name:"Manuel Beltre",cat:"Baseball"},
+  {n:"01-NK",name:"Nick Kurtz",cat:"Baseball"},{n:"01-TT",name:"Tommy Troy",cat:"Baseball"},
+];
+const POOL_SPA_2003 = [
+  {n:"03-AJ",name:"Ali Jennings III",cat:"Football"},{n:"03-AW",name:"Anna Leigh Waters",cat:"Pickleball"},
+  {n:"03-BG",name:"Brandon Garrison",cat:"Basketball"},{n:"03-BJ",name:"Jordan Burroughs",cat:"Wrestling"},
+  {n:"03-BR",name:"Maya Brady",cat:"Softball"},{n:"03-CM",name:"Caroline Marks",cat:"Surfing"},
+  {n:"03-DC",name:"Derek Curiel",cat:"Baseball"},{n:"03-DI",name:"Logan Diggs",cat:"Football"},
+  {n:"03-DP",name:"Dink Pate",cat:"Basketball"},{n:"03-EK",name:"Erriyon Knighton",cat:"Track"},
+  {n:"03-EV",name:"Evan Stewart",cat:"Football"},{n:"03-FT",name:"Troy Franklin",cat:"Football"},
+  {n:"03-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"03-IJ",name:"Ian Jackson",cat:"Basketball"},
+  {n:"03-JB",name:"John Bol",cat:"Basketball"},{n:"03-JD",name:"Jurrion Dickey",cat:"Football"},
+  {n:"03-JE",name:"Justin Edwards",cat:"Basketball"},{n:"03-KM",name:"Kyllian Michee",cat:"Basketball"},
+  {n:"03-MC",name:"Mookie Cook",cat:"Basketball"},{n:"03-MD",name:"Daniela Moroz",cat:"Kiteboarding"},
+  {n:"03-MK",name:"Konnor McClain",cat:"Gymnastics"},{n:"03-MS",name:"Matt Shaw",cat:"Baseball"},
+  {n:"03-MW",name:"Miles Chamley-Watson",cat:"Fencing"},{n:"03-RZ",name:"Rose Zhang",cat:"Golf-W"},
+  {n:"03-SH",name:"Jackson Shelstad",cat:"Basketball"},{n:"03-SHH",name:"Sam Hurley",cat:"Track"},
+  {n:"03-TR",name:"Trinity Rodman",cat:"Soccer-W"},{n:"03-VH",name:"Vance Honeycutt",cat:"Baseball"},
+];
+const POOL_EXQ_2009 = [
+  {n:"09-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"09-CO",name:"Mookie Cook",cat:"Basketball"},
+  {n:"09-DS",name:"Dorian Singer",cat:"Football"},{n:"09-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+  {n:"09-IJ",name:"Ian Jackson",cat:"Basketball"},{n:"09-JD",name:"Jurrion Dickey",cat:"Football"},
+  {n:"09-KM",name:"Kevin McGonigle",cat:"Baseball"},{n:"09-MO",name:"Alex Mooney",cat:"Baseball"},
+  {n:"09-TF",name:"Troy Franklin",cat:"Football"},{n:"09T-BG",name:"Brandon Garrison",cat:"Basketball"},
+  {n:"09T-DG",name:"Dillon Gabriel",cat:"Football"},{n:"09T-DI",name:"Logan Diggs",cat:"Football"},
+  {n:"09T-EH",name:"Ethan Holliday",cat:"Baseball"},{n:"09T-MK",name:"Konnor McClain",cat:"Gymnastics"},
+];
+const POOL_EXQ_2003_MAT = [
+  {n:"03E-EK",name:"Erriyon Knighton",cat:"Track"},{n:"03E-RZ",name:"Rose Zhang",cat:"Golf-W"},
+];
+
+// ── 2023 UPDATE AUTOS ─────────────────────────────────────────────────────────
+const POOL_2023_AUTO = [
+  {n:"A-BY",name:"Bryce Young",cat:"Football"},{n:"A-DN",name:"Darwin Nunez",cat:"Soccer"},
+  {n:"A-E",name:"El-P",cat:"Rapper"},{n:"A-HJ",name:"Haley Jones",cat:"Basketball"},
+  {n:"A-IA",name:"Izzy Abanikanda",cat:"Football"},{n:"A-KI",name:"Killer Mike",cat:"Rapper"},
+  {n:"A-LO",name:"Lena Oberdorf",cat:"Soccer-W"},{n:"A-MO",name:"Anson Mount",cat:"Actor"},
+  {n:"A-NI",name:"Nicholaus Iamaleava",cat:"Football"},{n:"A-TD",name:"Tom DeLonge",cat:"Musician"},
+];
+const POOL_2023_GOUDEY = [
+  {n:"GA-AR",name:"Anthony Richardson",cat:"Football"},{n:"GA-DN",name:"Darwin Nunez",cat:"Soccer"},
+  {n:"GA-E",name:"El-P",cat:"Rapper"},{n:"GA-IT",name:"Ilia Topuria",cat:"MMA"},
+  {n:"GA-JW",name:"Juju Watkins",cat:"Basketball"},{n:"GA-KM",name:"Killer Mike",cat:"Rapper"},
+  {n:"GA-LO",name:"Lena Oberdorf",cat:"Soccer-W"},{n:"GA-NI",name:"Nicholaus Iamaleava",cat:"Football"},
+  {n:"GA-TD",name:"Tom DeLonge",cat:"Musician"},
+];
+const POOL_2023_HORIZ = [
+  {n:"HA-AR",name:"Anthony Richardson",cat:"Football"},{n:"HA-DL",name:"Dereck Lively",cat:"Basketball"},
+  {n:"HA-DN",name:"Darwin Nunez",cat:"Soccer"},
+];
+const POOL_2023_SPLASH = [
+  {n:"SA-AR",name:"Anthony Richardson",cat:"Football"},{n:"SA-BY",name:"Bryce Young",cat:"Football"},
+];
+
+const RARE_GROUPS = [
+  {
+    id:"base-par", label:"Base Parallels", gc:"#64748b",
+    items:[
+      {id:"glossy-black",  label:"Glossy Black",    accent:"#94a3b8", note:"1:3 hobby/ePack",      pool:BASE_SET},
+      {id:"lucky-red",     label:"Lucky Red",        accent:"#ef4444", note:"Blaster China · 4/box",pool:BASE_SET},
+      {id:"turquoise",     label:"Turquoise",        accent:"#2dd4bf", note:"Blaster NA · 4/box",   pool:BASE_SET},
+      {id:"blank-backs",   label:"Blank Backs",      accent:"#cbd5e1", note:"Hobby/ePack random",   pool:BASE_SET},
+      {id:"plates",        label:"Printing Plates",  accent:"#fbbf24", note:"#/4 · all 150 cards",  pool:ALL150},
+    ]
+  },
+  {
+    id:"platinum", label:"Goodwin Platinum (Chromium)", gc:"#cbd5e1",
+    items:[
+      {id:"plat-rainbow",  label:"Rainbow",          accent:"#a855f7", note:"~1:8 packs",   pool:BASE_SET},
+      {id:"plat-red",      label:"Red",              accent:"#f87171", note:"~1:30 packs",  pool:BASE_SET},
+      {id:"plat-blue",     label:"Blue",             accent:"#60a5fa", note:"~1:45 packs",  pool:BASE_SET},
+      {id:"plat-green",    label:"Green",            accent:"#4ade80", note:"~1:90 packs",  pool:BASE_SET},
+      {id:"plat-neon",     label:"Neon Green",       accent:"#a3e635", note:"Blaster excl.",pool:BASE_SET},
+      {id:"plat-orange",   label:"Orange Prism",     accent:"#fb923c", note:"#/349",        pool:BASE_SET},
+      {id:"plat-terrazzo", label:"Rainbow Terrazzo", accent:"#c084fc", note:"#/249",        pool:BASE_SET},
+      {id:"plat-cosmic",   label:"Cosmic",           accent:"#818cf8", note:"#/199",        pool:BASE_SET},
+      {id:"plat-tortoise", label:"Tortoise Shell",   accent:"#d97706", note:"#/149",        pool:BASE_SET},
+      {id:"plat-sky",      label:"Sky",              accent:"#38bdf8", note:"#/99",         pool:BASE_SET},
+      {id:"plat-aqua",     label:"Aquamarine",       accent:"#34d399", note:"#/75",         pool:BASE_SET},
+      {id:"plat-pulsar",   label:"Purple Pulsar",    accent:"#d946ef", note:"#/23",         pool:BASE_SET},
+      {id:"plat-gwave",    label:"Green Wave",       accent:"#86efac", note:"#/10",         pool:BASE_SET},
+      {id:"plat-golden",   label:"Golden Treasures", accent:"#fde68a", note:"1/1",          pool:BASE_SET},
+    ]
+  },
+  {
+    id:"autos", label:"Autographs", gc:"#fbbf24",
+    items:[
+      {id:"auto-std",   label:"Standard Auto",        accent:"#fbbf24", note:"1:75 hobby",    pool:POOL_AUTO_STD},
+      {id:"auto-horiz", label:"Auto Horizontal",      accent:"#f59e0b", note:"1:240 packs",   pool:POOL_AUTO_HORIZ},
+      {id:"auto-inscr", label:"Auto Inscriptions",    accent:"#f97316", note:"#/10–#/75 · 28 subjects", pool:POOL_AUTO_INSCR},
+      {id:"auto-dual",  label:"Dual Auto (GDA-TT)",   accent:"#fb923c", note:"#/10 · Alyssa & Gisele Thompson", pool:[{n:"GDA-TT",name:"Alyssa/Gisele Thompson",cat:"Soccer-W"}]},
+      {id:"goudey-auto",label:"Goudey Auto",          accent:"#fde068", note:"1:240 packs",   pool:POOL_GOUDEY_AUTO},
+      {id:"splash-auto",label:"Splash of Color Auto", accent:"#38bdf8", note:"1:180 packs",   pool:POOL_SPLASH_AUTO},
+      {id:"sport-royalty",label:"Sport Royalty Auto", accent:"#ef4444", note:"1:8640 · Bryce Young, De'Aaron Fox", pool:[{n:"SRA-BY",name:"Bryce Young",cat:"Football"},{n:"SRA-DAF",name:"De'Aaron Fox",cat:"Basketball"}]},
+      {id:"sport-royal-mem",label:"Sport Royalty Dual Mem", accent:"#f43f5e", note:"1:2400", pool:[
+        {n:"SRM2-BN",name:"Bo Nickal",cat:"MMA"},{n:"SRM2-EK",name:"Erriyon Knighton",cat:"Track"},
+        {n:"SRM2-MJ",name:"Michael Jordan",cat:"Basketball"},{n:"SRM2-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+        {n:"SRM2-TW",name:"Tiger Woods",cat:"Golf"}
+      ]},
+    ]
+  },
+  {
+    id:"memorabilia", label:"Memorabilia", gc:"#94a3b8",
+    items:[
+      {id:"mem-std", label:"Game-Used Memorabilia", accent:"#94a3b8", note:"36 subjects", pool:POOL_MEM},
+    ]
+  },
+  {
+    id:"exquisite", label:"Exquisite Collection", gc:"#c084fc",
+    items:[
+      {id:"exq-base",      label:"Exquisite Base",         accent:"#a855f7", note:"#/99",            pool:POOL_EXQ_BASE},
+      {id:"exq-rookie",    label:"Exquisite Rookie",       accent:"#a855f7", note:"#/149",            pool:POOL_EXQ_ROOKIE},
+      {id:"exq-auto",      label:"Rookie Auto",            accent:"#c084fc", note:"#/99",             pool:POOL_EXQ_ROOKIE_AUTO},
+      {id:"exq-autopatch", label:"Rookie Auto Patch",      accent:"#c084fc", note:"#/99",             pool:POOL_EXQ_AUTO_PATCH},
+      {id:"exq-goldspec",  label:"Gold Spectrum Parallel", accent:"#fde68a", note:"#/10",             pool:null, freeText:true},
+      {id:"exq-black",     label:"Black Parallel",         accent:"#64748b", note:"1/1",              pool:null, freeText:true},
+      {id:"exq-rookie-gold", label:"Exquisite Rookie Gold /10",   accent:"#fde68a", note:"#/10 · 24 subjects",  pool:POOL_EXQ_ROOKIE_GOLD},
+      {id:"exq-rookie-black","label":"Exquisite Rookie Black 1/1",  accent:"#64748b", note:"1/1 · 24 subjects",   pool:POOL_EXQ_ROOKIE_GOLD},
+      {id:"exq-auto-gold",   label:"Rookie Auto Gold /10",          accent:"#fde68a", note:"#/10 · 10 subjects",  pool:POOL_EXQ_AUTO_GOLD},
+      {id:"exq-auto-black2", label:"Rookie Auto Black 1/1",         accent:"#64748b", note:"1/1 · 9 subjects",    pool:POOL_EXQ_AUTO_BLACK},
+      {id:"exq-patch-gold",  label:"Auto Patch Gold /10",           accent:"#fde68a", note:"#/10 · 4 subjects",   pool:POOL_EXQ_PATCH_GOLD},
+      {id:"exq-patch-black", label:"Auto Patch Black 1/1",          accent:"#64748b", note:"1/1 · 4 subjects",    pool:POOL_EXQ_PATCH_GOLD},
+      {id:"exq-base-gold",   label:"Exquisite Base Gold /10",       accent:"#fde68a", note:"#/10 · AT/GT/MJ",     pool:POOL_EXQ_BASE_AUTO_GOLD},
+      {id:"exq-base-black",  label:"Exquisite Base Black 1/1",      accent:"#64748b", note:"1/1 · AT/GT/MJ",      pool:POOL_EXQ_BASE_AUTO_GOLD},
+      {id:"exq-kicks",       label:"Signature Kicks",               accent:"#818cf8", note:"DF #/35 · MJ #/35",   pool:POOL_EXQ_KICKS},
+      {id:"exq-2009",        label:"2009-10 Rookie Auto",           accent:"#c084fc", note:"#/49 · 14 subjects",   pool:POOL_EXQ_2009},
+      {id:"exq-2003mat",     label:"2003-04 Rookie Auto Materials", accent:"#c084fc", note:"#/25 · EK & RZ",       pool:POOL_EXQ_2003_MAT},
+    ]
+  },
+  {
+    id:"black-diamond", label:"Black Diamond", gc:"#94a3b8",
+    items:[
+      {id:"bd-base",       label:"Black Diamond Base",       accent:"#64748b", note:"#/349",          pool:POOL_BD_BASE},
+      {id:"bd-rookie",     label:"BD Rookie Gems",           accent:"#94a3b8", note:"#/349",           pool:POOL_BD_ROOKIE},
+      {id:"bd-band",       label:"Band of Color (Vets)",     accent:"#60a5fa", note:"7 subjects",      pool:POOL_BD_BAND},
+      {id:"bd-band-r",     label:"Band of Color (Rookies)",  accent:"#93c5fd", note:"13 subjects",     pool:POOL_BD_BAND_ROOKIES},
+      {id:"bd-gemography", label:"Gemography",               accent:"#e2e8f0", note:"3 subjects",      pool:POOL_BD_GEMOGRAPHY},
+      {id:"bd-relic-1",    label:"Stone Relics 1💎",         accent:"#cbd5e1", note:"Single Diamond",  pool:[
+        {n:"BDR-CS",name:"C.J. Stroud",cat:"Football"},
+      ]},
+      {id:"bd-relic-2",    label:"Stone Relics 2💎",         accent:"#cbd5e1", note:"Double Diamond",  pool:[
+        {n:"BDR-DF",name:"De'Aaron Fox",cat:"Basketball"},
+      ]},
+      {id:"bd-relic-4",    label:"Stone Relics 4💎",         accent:"#cbd5e1", note:"Quad Diamond",    pool:[
+        {n:"BDR-TW",name:"Tiger Woods",cat:"Golf"},{n:"BDR-MJ",name:"Michael Jordan",cat:"Basketball"},
+        {n:"BDR-WG",name:"Wayne Gretzky",cat:"Hockey"},
+      ]},
+      {id:"bd-rook-relic-1",label:"Rookie Stone Relics 1💎", accent:"#94a3b8", note:"Single Diamond · 8 subjects", pool:[
+        {n:"BDRR-IH",name:"Isiah Harwell",cat:"Basketball"},{n:"BDRR-IJ",name:"Ian Jackson",cat:"Basketball"},
+        {n:"BDRR-JR",name:"Jaden Rashada",cat:"Football"},{n:"BDRR-LD",name:"Leodalis De Vries",cat:"Baseball"},
+        {n:"BDRR-MB",name:"Maya Brady",cat:"Softball"},{n:"BDRR-MN",name:"Malik Nabers",cat:"Football"},
+        {n:"BDRR-SH",name:"Sam Hurley",cat:"Track"},{n:"BDRR-CM",name:"Caroline Marks",cat:"Surfing"},
+      ]},
+      {id:"bd-rook-relic-2",label:"Rookie Stone Relics 2💎", accent:"#94a3b8", note:"Double Diamond · 7 subjects", pool:[
+        {n:"BDRR-AH",name:"Aden Holloway",cat:"Basketball"},{n:"BDRR-BN",name:"Bo Nickal",cat:"MMA"},
+        {n:"BDRR-EH",name:"Ethan Holliday",cat:"Baseball"},{n:"BDRR-GS",name:"Gordon Sargent",cat:"Golf"},
+        {n:"BDRR-TF",name:"Troy Franklin",cat:"Football"},{n:"BDRR-TW",name:"Tommy White",cat:"Baseball"},
+        {n:"BDRR-JB",name:"Jordan Burroughs",cat:"Wrestling"},
+      ]},
+      {id:"bd-rook-relic-3",label:"Rookie Stone Relics 3💎", accent:"#94a3b8", note:"Triple Diamond · 5 subjects", pool:[
+        {n:"BDRR-AT",name:"Alyssa Thompson",cat:"Soccer-W"},{n:"BDRR-GT",name:"Gisele Thompson",cat:"Soccer-W"},
+        {n:"BDRR-RZ",name:"Rose Zhang",cat:"Golf-W"},{n:"BDRR-NE",name:"Malachi Nelson",cat:"Football"},
+        {n:"BDRR-AE",name:"Audric Estime",cat:"Football"},
+      ]},
+      {id:"bd-rook-relic-4",label:"Rookie Stone Relics 4💎", accent:"#94a3b8", note:"Quad Diamond · 5 subjects", pool:[
+        {n:"BDRR-AW",name:"Anna Leigh Waters",cat:"Pickleball"},{n:"BDRR-EK",name:"Erriyon Knighton",cat:"Track"},
+        {n:"BDRR-JE",name:"Justin Edwards",cat:"Basketball"},{n:"BDRR-TR",name:"Trinity Rodman",cat:"Soccer-W"},
+        {n:"BDRR-NK",name:"Nick Kurtz",cat:"Baseball"},
+      ]},
+      {id:"bd-red",        label:"BD Red Parallel",          accent:"#f87171", note:"#/100",            pool:null, freeText:true},
+      {id:"bd-green",      label:"BD Green Parallel",        accent:"#4ade80", note:"#/10",             pool:null, freeText:true},
+    ]
+  },
+  {
+    id:"inserts", label:"Special Inserts & Relics", gc:"#f97316",
+    items:[
+      {id:"young-guns",   label:"Young Guns",               accent:"#3b82f6", note:"1:3 packs · YG-1–50",      pool:POOL_YOUNG_GUNS},
+      {id:"yg-excl",      label:"YG Exclusives",            accent:"#93c5fd", note:"#/100",                     pool:POOL_YOUNG_GUNS},
+      {id:"yg-hg",        label:"YG High Gloss",            accent:"#dbeafe", note:"#/10",                      pool:POOL_YOUNG_GUNS},
+      {id:"yg-clearcut",  label:"YG Clear Cut",             accent:"#bae6fd", note:"1:240 h/e · acetate",       pool:POOL_YOUNG_GUNS},
+      {id:"yg-outburst",  label:"YG Outburst",              accent:"#60a5fa", note:"1:120 h/e · foilboard",     pool:POOL_YOUNG_GUNS},
+      {id:"yg-ob-red",    label:"YG Outburst Red",          accent:"#f87171", note:"#/25 · foilboard",          pool:POOL_YOUNG_GUNS},
+      {id:"yg-ob-gold",   label:"YG Outburst Gold",         accent:"#fde68a", note:"1/1 · foilboard",           pool:POOL_YOUNG_GUNS},
+      {id:"yg-plates",    label:"YG Printing Plates",       accent:"#fbbf24", note:"#/4",                       pool:POOL_YOUNG_GUNS},
+      {id:"all-world",    label:"Goodwin All-World",        accent:"#c084fc", note:"Blaster only · AW-1–15",    pool:POOL_ALL_WORLD},
+      {id:"aw-aqua",      label:"All-World Aqua",            accent:"#22d3ee", note:"Blaster",                           pool:POOL_AW_BASE},
+      {id:"aw-yellow",    label:"All-World Yellow",          accent:"#fde047", note:"Blaster",                           pool:POOL_AW_BASE},
+      {id:"aw-orange",    label:"All-World Orange",          accent:"#fb923c", note:"#/299",                             pool:POOL_AW_BASE},
+      {id:"aw-green",     label:"All-World Green",           accent:"#4ade80", note:"#/99",                              pool:POOL_AW_BASE},
+      {id:"aw-pink",      label:"All-World Pink",            accent:"#f472b6", note:"#/10",                              pool:POOL_AW_BASE},
+      {id:"aw-purple",    label:"All-World Purple",          accent:"#a855f7", note:"1/1",                               pool:POOL_AW_BASE},
+      {id:"aw-auto-gold", label:"All-World Auto Gold",       accent:"#fbbf24", note:"SSP · 1:960 blaster · 11 subjects", pool:POOL_AW_AUTO},
+      {id:"aw-auto-black",label:"All-World Auto Black",      accent:"#64748b", note:"1/1 · 11 subjects",                 pool:POOL_AW_AUTO},
+      {id:"lenticular-1", label:"3-D Lenticular Tier 1",    accent:"#34d399", note:"1:50 hobby / 1:30 ePack",   pool:POOL_LENTICULAR_T1},
+      {id:"lenticular-2", label:"3-D Lenticular Tier 2",    accent:"#6ee7b7", note:"1:150 hobby / 1:133 ePack", pool:POOL_LENTICULAR_T2},
+      {id:"lenticular-3", label:"3-D Lenticular Tier 3",    accent:"#a7f3d0", note:"1:1,400 hobby",             pool:POOL_LENTICULAR_T3},
+      {id:"coinage",      label:"Birth Year Quad Coinage",  accent:"#fbbf24", note:"#/50",                      pool:POOL_COINAGE},
+      {id:"literary",     label:"Literary Classic Patches", accent:"#fb923c", note:"LCP-6–100 · 5 tiers",       pool:POOL_LITERARY},
+      {id:"tiger-tale",   label:"Tiger's Tale Vol. 2",      accent:"#f97316", note:"10-card set · TT-1–10",     pool:[
+        {n:"TT-1",name:"Tiger Woods (TT-1)",cat:"Golf"},{n:"TT-2",name:"Tiger Woods (TT-2)",cat:"Golf"},
+        {n:"TT-3",name:"Tiger Woods (TT-3)",cat:"Golf"},{n:"TT-4",name:"Tiger Woods (TT-4)",cat:"Golf"},
+        {n:"TT-5",name:"Tiger Woods (TT-5)",cat:"Golf"},{n:"TT-6",name:"Tiger Woods (TT-6)",cat:"Golf"},
+        {n:"TT-7",name:"Tiger Woods (TT-7)",cat:"Golf"},{n:"TT-8",name:"Tiger Woods (TT-8)",cat:"Golf"},
+        {n:"TT-9",name:"Tiger Woods (TT-9)",cat:"Golf"},{n:"TT-10",name:"Tiger Woods (TT-10)",cat:"Golf"},
+      ]},
+      {id:"museum",       label:"Museum Collection Relic",  accent:"#4ade80", note:"WWII uniform relics",       pool:null, freeText:true},
+      {id:"masterpieces", label:"Art of Ages Masterpieces", accent:"#f59e0b", note:"1/1 original artwork",      pool:null, freeText:true},
+      {id:"currency",     label:"US Currency Relic",        accent:"#86efac", note:"~1:4800 packs",            pool:[
+        {n:"CR-1",name:"Lincoln Wheat Penny",cat:"Relic"},{n:"CR-2",name:"Buffalo Nickel",cat:"Relic"},
+        {n:"CR-3",name:"Mercury Dime",cat:"Relic"},{n:"CR-4",name:"Standing Liberty Quarter",cat:"Relic"},
+        {n:"CR-5",name:"Peace Dollar",cat:"Relic"},
+      ]},
+      {id:"gold-nugget",  label:"Alaska Gold Nugget Relic", accent:"#fde68a", note:"#/20 · 25 Alaska events",   pool:null, freeText:true},
+    ]
+  },
+  {
+    id:"spa-retro", label:"SP Authentic / Retro Autos", gc:"#60a5fa",
+    items:[
+      {id:"spa-2000", label:"SP Authentic 2000 Future Watch Auto", accent:"#60a5fa", note:"#/299 · 14 subjects", pool:POOL_SPA_2000},
+      {id:"spa-2001", label:"SP Authentic 2001 Future Watch Auto", accent:"#60a5fa", note:"#/299 · 8 subjects",  pool:POOL_SPA_2001},
+      {id:"spa-2003", label:"SP Authentic 2003-04 Rookie Auto",    accent:"#60a5fa", note:"#/199–#/299 · 28 subjects", pool:POOL_SPA_2003},
+    ]
+  },
+  {
+    id:"update-2023", label:"2023 Update", gc:"#f472b6",
+    items:[
+      {id:"upd23-auto",   label:"2023 Update Autographs",          accent:"#f472b6", note:"10 subjects",  pool:POOL_2023_AUTO},
+      {id:"upd23-goudey", label:"2023 Update Goudey Auto",         accent:"#f472b6", note:"9 subjects",   pool:POOL_2023_GOUDEY},
+      {id:"upd23-horiz",  label:"2023 Update Horizontal Auto",     accent:"#f472b6", note:"3 subjects",   pool:POOL_2023_HORIZ},
+      {id:"upd23-splash", label:"2023 Update Splash of Color Auto",accent:"#f472b6", note:"AR & BY",      pool:POOL_2023_SPLASH},
+      {id:"upd23-exq",    label:"2023 Update Exquisite Auto",      accent:"#c084fc", note:"#/99 · Darwin Nunez", pool:[{n:"RA-DN",name:"Darwin Nunez",cat:"Soccer"}]},
+      {id:"splash-bounty",label:"Splash Auto Bounty Award",        accent:"#38bdf8", note:"De'Aaron Fox",  pool:[{n:"LBA-DF",name:"De'Aaron Fox",cat:"Basketball"}]},
+    ]
+  },
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "goodwin2024-v4";
+let counts = {};
+let saveTimer = null;
+
+function loadData() {
+  try { const d = localStorage.getItem(STORAGE_KEY); if(d) counts = JSON.parse(d); } catch{}
+}
+
+function saveData() {
+  const el = document.getElementById("save-status");
+  if(el){ el.className="saving-badge"; el.textContent="Saving…"; }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(counts)); } catch{}
+    if(el){ el.className="saved-badge"; el.textContent="Saved ✓"; }
+  }, 400);
+}
+
+// ── CAT COLORS ────────────────────────────────────────────────────────────────
+
+const CAT_COLORS = {
+  "Basketball":"#f97316","Football":"#3b82f6","Baseball":"#22c55e","Golf":"#a3e635","Golf-W":"#a3e635",
+  "Soccer":"#06b6d4","Soccer-W":"#06b6d4","Track":"#f43f5e","Fencing":"#8b5cf6","Kiteboarding":"#0ea5e9",
+  "Swimming":"#0ea5e9","Wrestling":"#f59e0b","Surfing":"#0ea5e9","Gymnastics":"#ec4899","Pickleball":"#84cc16",
+  "MMA":"#ef4444","MMA-W":"#ef4444","Softball":"#f97316","Rapper":"#a855f7","Musician":"#a855f7",
+  "Actor":"#6366f1","Media":"#64748b","Hockey":"#38bdf8","Tennis":"#facc15","Literary":"#d97706","Relic":"#94a3b8",
+};
+const getCat = cat => CAT_COLORS[cat] || "#94a3b8";
+
+// ── RENDER HELPERS ────────────────────────────────────────────────────────────
+
+function cardRowHTML(card, countKey) {
+  const c = counts[countKey]||0;
+  const has = c>0;
+  const cc = getCat(card.cat);
+  const numBg = has ? cc : "#1e293b";
+  const numClr = has ? "#000" : "#475569";
+  const nameClr = has ? "#f1f5f9" : "#64748b";
+  const nameWt = has ? "600" : "400";
+  const catClr = has ? cc : "#334155";
+  const rowBg = has ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.02)";
+  const rowBorder = has ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent";
+  const horizTag = card.tag==="H" ? `<span class="horiz-tag">HORIZ</span>` : "";
+  const valClass = c===0?"":"counter-val "+(c===1?"one":"many");
+  const decOpacity = c===0?" zero":"";
+  return `<div class="card-row${has?" has":""}" id="row-${countKey}" style="background:${rowBg};border:${rowBorder}">
+    <div class="card-num" style="background:${numBg};color:${numClr}">${card.n}</div>
+    <div class="card-info">
+      <div class="card-name" style="color:${nameClr};font-weight:${nameWt}">${card.name}${horizTag}</div>
+      <div class="card-cat" style="color:${catClr}">${card.cat}</div>
+    </div>
+    <div class="counter">
+      <button class="counter-btn${decOpacity}" onclick="dec('${countKey}')">−</button>
+      <div class="counter-val ${c===0?'':c===1?'one':'many'}">${c}</div>
+      <button class="counter-btn" onclick="inc('${countKey}')">+</button>
+    </div>
+  </div>`;
+}
+
+function freeTextHTML(itemId, accent) {
+  const key = `ft-${itemId}`;
+  let entries = [];
+  try { entries = counts[key] ? JSON.parse(counts[key]) : []; } catch{}
+  const entriesHTML = entries.map(e => `
+    <div class="free-entry" id="fte-${e.id}" style="border:1px solid ${accent}33">
+      <div class="free-entry-name">${e.name}</div>
+      <div class="counter">
+        <button class="counter-btn${e.qty<=1?" zero":""}" onclick="ftDec('${itemId}',${e.id})">−</button>
+        <div class="counter-val ${e.qty===1?'one':'many'}">${e.qty}</div>
+        <button class="counter-btn" onclick="ftInc('${itemId}',${e.id})">+</button>
+      </div>
+      <button class="free-remove" onclick="ftRemove('${itemId}',${e.id})">×</button>
+    </div>`).join("");
+  return `<div class="free-text-content" id="ft-content-${itemId}">
+    ${entriesHTML}
+    <div class="free-add-row">
+      <input class="free-input" id="ft-input-${itemId}" style="border:1px solid ${accent}44" placeholder="Player / subject name…" onkeydown="if(event.key==='Enter')ftAdd('${itemId}','${accent}')">
+      <button class="free-add-btn" style="border:1px solid ${accent}88;background:${accent}22;color:${accent}" onclick="ftAdd('${itemId}','${accent}')">Add</button>
+    </div>
+  </div>`;
+}
+
+// ── FREE TEXT OPS ─────────────────────────────────────────────────────────────
+
+function getFtEntries(itemId) {
+  const key = `ft-${itemId}`;
+  try { return counts[key] ? JSON.parse(counts[key]) : []; } catch { return []; }
+}
+function setFtEntries(itemId, entries) {
+  counts[`ft-${itemId}`] = JSON.stringify(entries);
+  saveData();
+}
+function ftAdd(itemId, accent) {
+  const inp = document.getElementById(`ft-input-${itemId}`);
+  const name = inp.value.trim();
+  if(!name) return;
+  const entries = getFtEntries(itemId);
+  entries.push({id: Date.now(), name, qty:1});
+  setFtEntries(itemId, entries);
+  inp.value = "";
+  rerenderFtContent(itemId, accent);
+  updateStats();
+}
+function ftInc(itemId, id) {
+  const entries = getFtEntries(itemId).map(e => e.id===id ? {...e, qty:e.qty+1} : e);
+  const accent = document.querySelector(`[data-item-id="${itemId}"]`)?.dataset.accent || "#94a3b8";
+  setFtEntries(itemId, entries);
+  rerenderFtContent(itemId, accent);
+}
+function ftDec(itemId, id) {
+  let entries = getFtEntries(itemId).map(e => e.id===id ? {...e, qty:Math.max(0,e.qty-1)} : e).filter(e => e.qty > 0);
+  const accent = document.querySelector(`[data-item-id="${itemId}"]`)?.dataset.accent || "#94a3b8";
+  setFtEntries(itemId, entries);
+  rerenderFtContent(itemId, accent);
+}
+function ftRemove(itemId, id) {
+  const entries = getFtEntries(itemId).filter(e => e.id !== id);
+  const accent = document.querySelector(`[data-item-id="${itemId}"]`)?.dataset.accent || "#94a3b8";
+  setFtEntries(itemId, entries);
+  rerenderFtContent(itemId, accent);
+  updateStats();
+}
+function rerenderFtContent(itemId, accent) {
+  const el = document.getElementById(`ft-content-${itemId}`);
+  if(el) el.outerHTML = freeTextHTML(itemId, accent);
+  updateItemCount(itemId);
+}
+
+// ── COUNTER OPS ───────────────────────────────────────────────────────────────
+
+function inc(key) {
+  counts[key] = (counts[key]||0) + 1;
+  saveData();
+  rerenderRow(key);
+  updateStats();
+}
+function dec(key) {
+  const c = counts[key]||0;
+  if(!c) return;
+  counts[key] = c - 1;
+  saveData();
+  rerenderRow(key);
+  updateStats();
+}
+function rerenderRow(key) {
+  const el = document.getElementById(`row-${key}`);
+  if(!el) return;
+  // find card from key
+  const [prefix, ...rest] = key.split("-");
+  let card = null;
+  let pool = null;
+  if(prefix === "base" || prefix === "splash") {
+    const n = parseInt(rest[0]);
+    pool = prefix === "base" ? BASE_SET : SPLASH_SET;
+    card = pool.find(c => c.n === n);
+  } else {
+    // rare pools — find by composite key
+    for(const g of RARE_GROUPS) {
+      for(const item of g.items) {
+        if(item.pool && !item.freeText) {
+          const cardN = rest.join("-"); // rejoin in case card n has dashes
+          const found = item.pool.find(c => String(c.n) === cardN && item.id === prefix);
+          if(found) { card = found; break; }
+        }
+      }
+      if(card) break;
+    }
+    if(!card) {
+      // fallback: reconstruct from remaining key parts
+      const itemId = key.substring(0, key.lastIndexOf("-"));
+      const cardN = key.substring(key.lastIndexOf("-")+1);
+      for(const g of RARE_GROUPS) {
+        for(const item of g.items) {
+          if(item.pool && item.id === itemId) {
+            card = item.pool.find(c => String(c.n) === cardN);
+            if(card) break;
+          }
+        }
+        if(card) break;
+      }
+    }
+  }
+  if(card) el.outerHTML = cardRowHTML(card, key);
+  // find the correct itemId by matching against known items
+  let foundItemId = null;
+  for(const g of RARE_GROUPS) {
+    for(const item of g.items) {
+      if(item.pool && item.pool.find(c => key === item.id + "-" + String(c.n))) {
+        foundItemId = item.id; break;
+      }
+    }
+    if(foundItemId) break;
+  }
+  if(foundItemId) updateItemCount(foundItemId);
+}
+
+function itemProgressText(item) {
+  const have = getItemTotal(item);
+  const size = getItemSize(item);
+  if(size === null) return have > 0 ? have + " collected" : "";
+  const pct = (have / size * 100).toFixed(0);
+  return have + " / " + size + " (" + pct + "%)";
+}
+
+function groupProgressText(group) {
+  let have = 0, total = 0;
+  for(const item of group.items) {
+    const size = getItemSize(item);
+    if(size !== null) { have += getItemTotal(item); total += size; }
+  }
+  if(total === 0) { const gt = getGroupTotal(group); return gt > 0 ? gt + " collected" : ""; }
+  const pct = (have / total * 100).toFixed(0);
+  return have + " / " + total + " (" + pct + "%)";
+}
+
+function updateItemCount(itemId) {
+  const badge = document.getElementById("item-count-" + itemId);
+  if(!badge) return;
+  const item = findItem(itemId);
+  if(!item) return;
+  badge.textContent = itemProgressText(item);
+  // also update parent group header
+  for(const g of RARE_GROUPS) {
+    if(g.items.find(i => i.id === itemId)) {
+      const gbadge = document.getElementById("group-progress-" + g.id);
+      if(gbadge) gbadge.textContent = groupProgressText(g);
+      break;
+    }
+  }
+}
+
+function findItem(itemId) {
+  for(const g of RARE_GROUPS) {
+    const found = g.items.find(i => i.id === itemId);
+    if(found) return found;
+  }
+  return null;
+}
+
+function getItemSize(item) {
+  if(item.freeText || !item.pool) return null;
+  return item.pool.length;
+}
+
+function getItemTotal(item) {
+  if(item.freeText || !item.pool) {
+    try { return getFtEntries(item.id).length; } catch { return 0; }
+  }
+  return item.pool.filter(c => (counts[`${item.id}-${c.n}`]||0) > 0).length;
+}
+
+function getGroupTotal(group) {
+  return group.items.reduce((acc, item) => acc + getItemTotal(item), 0);
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+
+function exportData() {
+  const payload = {
+    version: "goodwin2024-v4",
+    exported: new Date().toISOString(),
+    counts: counts
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "goodwin2024-backup-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if(!payload.counts) throw new Error("Invalid backup file");
+      counts = payload.counts;
+      saveData();
+      renderBase();
+      renderSplash();
+      renderRare();
+      updateStats();
+      const ok = document.getElementById("import-ok");
+      ok.style.display = "block";
+      setTimeout(() => ok.style.display = "none", 3000);
+    } catch(err) {
+      alert("Could not load backup: " + err.message);
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  const baseHave = BASE_SET.filter(c => (counts[`base-${c.n}`]||0) > 0).length;
+  const splashHave = SPLASH_SET.filter(c => (counts[`splash-${c.n}`]||0) > 0).length;
+  const dupes = [...BASE_SET, ...SPLASH_SET].reduce((a, c) => {
+    const pfx = c.n <= 100 ? "base" : "splash";
+    return a + Math.max(0, (counts[`${pfx}-${c.n}`]||0) - 1);
+  }, 0);
+
+  const basePct = (baseHave/BASE_SET.length*100).toFixed(0);
+  const splashPct = (splashHave/SPLASH_SET.length*100).toFixed(0);
+  document.getElementById("base-stat").textContent = `${baseHave} / ${BASE_SET.length} (${basePct}%)`;
+  document.getElementById("splash-stat").textContent = `${splashHave} / ${SPLASH_SET.length} (${splashPct}%)`;
+  document.getElementById("base-bar").style.width = `${basePct}%`;
+  document.getElementById("splash-bar").style.width = `${splashPct}%`;
+  document.getElementById("tab-base-sub").textContent = `${baseHave} / ${BASE_SET.length} (${basePct}%)`;
+  document.getElementById("tab-splash-sub").textContent = `${splashHave} / ${SPLASH_SET.length} (${splashPct}%)`;
+
+  const dd = document.getElementById("doubles-display");
+  if(dupes > 0) { dd.style.display=""; dd.textContent = `${dupes} double${dupes!==1?"s":""}`; }
+  else dd.style.display="none";
+
+  // total cards including doubles across everything
+  let totalCards = 0;
+  // base + splash
+  [...BASE_SET, ...SPLASH_SET].forEach(c => {
+    const pfx = c.n <= 100 ? "base" : "splash";
+    totalCards += counts[`${pfx}-${c.n}`] || 0;
+  });
+  // rare pools
+  for(const g of RARE_GROUPS) {
+    for(const item of g.items) {
+      if(item.pool && !item.freeText) {
+        item.pool.forEach(c => { totalCards += counts[`${item.id}-${c.n}`] || 0; });
+      } else if(item.freeText || !item.pool) {
+        try { totalCards += getFtEntries(item.id).reduce((a,e) => a + e.qty, 0); } catch{}
+      }
+    }
+  }
+  const td = document.getElementById("total-display");
+  if(td) td.textContent = totalCards + " card" + (totalCards !== 1 ? "s" : "") + " total";
+}
+
+// ── TAB SWITCH ────────────────────────────────────────────────────────────────
+
+function switchTab(tabId) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(`panel-${tabId}`).classList.add("active");
+  document.querySelector(`[data-tab="${tabId}"]`).classList.add("active");
+  if(tabId === "rare") {
+    const searchEl = document.getElementById("rare-search");
+    if(searchEl) searchEl.value = "";
+    renderRare();
+  }
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+
+function filterRare(q) {
+  const lq = q.toLowerCase();
+  document.querySelectorAll(".rare-item").forEach(item => {
+    const rows = item.querySelectorAll(".card-row");
+    let itemMatch = false;
+    rows.forEach(row => {
+      const name = row.querySelector(".card-name")?.textContent.toLowerCase() || "";
+      const cat = row.querySelector(".card-cat")?.textContent.toLowerCase() || "";
+      const num = row.querySelector(".card-num")?.textContent.toLowerCase() || "";
+      const match = !lq || name.includes(lq) || cat.includes(lq) || num.includes(lq);
+      row.style.display = match ? "" : "none";
+      if(match) itemMatch = true;
+    });
+    // Also match on item label itself
+    const label = item.querySelector(".rare-item-label")?.textContent.toLowerCase() || "";
+    if(!lq || label.includes(lq)) {
+      item.style.display = "";
+      rows.forEach(r => r.style.display = "");
+    } else if(itemMatch) {
+      item.style.display = "";
+      // auto-expand when searching
+      const content = item.querySelector(".rare-item-content");
+      if(content && lq) content.style.display = "";
+    } else {
+      item.style.display = "none";
+    }
+  });
+  // Show/hide groups based on whether they have visible items
+  document.querySelectorAll(".rare-group").forEach(group => {
+    const visibleItems = [...group.querySelectorAll(".rare-item")].some(i => i.style.display !== "none");
+    group.style.display = visibleItems ? "" : "none";
+    if(lq && visibleItems) {
+      const gc = group.querySelector(".rare-items");
+      if(gc) gc.style.display = "";
+    }
+  });
+}
+
+function filterBase(q) {
+  const rows = document.querySelectorAll("#base-list .card-row");
+  rows.forEach(row => {
+    const name = row.querySelector(".card-name").textContent.toLowerCase();
+    const cat = row.querySelector(".card-cat").textContent.toLowerCase();
+    const num = row.querySelector(".card-num").textContent.toLowerCase();
+    row.style.display = (!q || name.includes(q.toLowerCase()) || cat.includes(q.toLowerCase()) || num.includes(q.toLowerCase())) ? "" : "none";
+  });
+}
+function filterSplash(q) {
+  const rows = document.querySelectorAll("#splash-list .card-row");
+  rows.forEach(row => {
+    const name = row.querySelector(".card-name").textContent.toLowerCase();
+    const cat = row.querySelector(".card-cat").textContent.toLowerCase();
+    const num = row.querySelector(".card-num").textContent.toLowerCase();
+    row.style.display = (!q || name.includes(q.toLowerCase()) || cat.includes(q.toLowerCase()) || num.includes(q.toLowerCase())) ? "" : "none";
+  });
+}
+
+// ── RARE ACCORDION ────────────────────────────────────────────────────────────
+
+function toggleGroup(groupId) {
+  const content = document.getElementById(`gc-${groupId}`);
+  const arrow = document.getElementById(`ga-${groupId}`);
+  const isOpen = content.style.display !== "none";
+  content.style.display = isOpen ? "none" : "";
+  arrow.textContent = isOpen ? "▼" : "▲";
+}
+function toggleItem(itemId) {
+  const content = document.getElementById(`ic-${itemId}`);
+  const arrow = document.getElementById(`ia-${itemId}`);
+  const isOpen = content.style.display !== "none";
+  content.style.display = isOpen ? "none" : "";
+  arrow.textContent = isOpen ? "▼" : "▲";
+}
+
+// ── RENDER RARE TAB ───────────────────────────────────────────────────────────
+
+function renderRare() {
+  const list = document.getElementById("rare-list");
+  list.innerHTML = RARE_GROUPS.map(group => {
+    const gt = getGroupTotal(group);
+    const itemsHTML = group.items.map(item => {
+      const it = getItemTotal(item);
+      const contentHTML = (item.freeText || !item.pool)
+        ? freeTextHTML(item.id, item.accent)
+        : item.pool.map(card => cardRowHTML(card, `${item.id}-${card.n}`)).join("");
+      return `<div class="rare-item">
+        <button class="rare-item-btn" style="border:1px solid ${item.accent}44" onclick="toggleItem('${item.id}')" data-item-id="${item.id}" data-accent="${item.accent}">
+          <span class="rare-item-label">
+            <span class="item-dot" style="background:${item.accent}"></span>
+            <span style="color:${item.accent}">${item.label}</span>
+            <span class="item-note">${item.note}</span>
+            <span class="item-count" id="item-count-${item.id}" style="color:${item.accent}">${itemProgressText(item)}</span>
+          </span>
+          <span class="rare-item-arrow" id="ia-${item.id}">▼</span>
+        </button>
+        <div class="rare-item-content" id="ic-${item.id}" style="display:none">${contentHTML}</div>
+      </div>`;
+    }).join("");
+
+    return `<div class="rare-group">
+      <button class="rare-group-btn" style="border:1px solid ${group.gc}33;background:${group.gc}11" onclick="toggleGroup('${group.id}')">
+        <span class="rare-group-label">
+          <span class="gc-dot" style="background:${group.gc}"></span>
+          ${group.label}
+          ${groupProgressText(group)?"<span id=\"group-progress-" + group.id + "\" class=\"group-collected\">" + groupProgressText(group) + "</span>":"<span id=\"group-progress-" + group.id + "\" class=\"group-collected\"></span>"}
+        </span>
+        <span class="rare-group-arrow" id="ga-${group.id}">▼</span>
+      </button>
+      <div class="rare-items" id="gc-${group.id}" style="display:none">${itemsHTML}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+function renderBase() {
+  document.getElementById("base-list").innerHTML = BASE_SET.map(c => cardRowHTML(c, `base-${c.n}`)).join("");
+}
+function renderSplash() {
+  document.getElementById("splash-list").innerHTML = SPLASH_SET.map(c => cardRowHTML(c, `splash-${c.n}`)).join("");
+}
+
+loadData();
+renderBase();
+renderSplash();
+renderRare();
+updateStats();
+
+// Tab clicks
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".tab-btn");
+  if(btn) switchTab(btn.dataset.tab);
+});
+</script>
+</body>
+</html>
